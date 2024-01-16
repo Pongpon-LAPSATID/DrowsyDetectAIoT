@@ -1,10 +1,11 @@
 # Ict720-software-2024
-members : Miss Pitijit Charoenwuttikajorn (6622040266)
-          Miss Onsasipat Kasamrach (6622040670)
-          Mr. Pongpon Lapsatid (6622040316)
+## Member
+1. Miss Pitijit Charoenwuttikajorn (6622040266)
+2. Miss Onsasipat Kasamrach (6622040670)
+3. Mr. Pongpon Lapsatid (6622040316)
           
-# Domain: Car Safety Technology
-Stakeholder:
+## Domain: Car Safety Technology
+## Stakeholder:
       1.Drivers
       2.Insurance Company
       3.Car Manufacturers
