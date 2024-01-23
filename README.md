@@ -15,9 +15,11 @@
 
 ## Acceptance Criteria
 ### 1. For Car Drivers <br>
-1.1 xxx <br>
-1.2 xxx <br>
-1.3 xx
+1.1 I can activate my device.<br>
+1.2 I can check if my device is online.<br>
+1.3 I can get sound notification when I falling asleep for XXX minutes.<br>
+1.4 I can turn off sound notification.<br>
+1.5 I can deactivate my device.
 
 ### 2. For Car Owner <br>
 2.1 xxx <br>
