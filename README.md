@@ -24,6 +24,10 @@
 2.2 I can get the csv file that records the timestamp of when the car driver falls asleep.<br>
 2.3 I can see a dashboard UI that shows statistical insight regarding the car driver falling asleep.<br>
 
+## State Diagram (Drafting) <br>
+<img width="619" alt="image" src="https://github.com/pitijit/Ict720-software-2024/assets/92443678/dd36ccde-ca8a-4491-939e-811fcb25c473">
+
+
 
 
 
