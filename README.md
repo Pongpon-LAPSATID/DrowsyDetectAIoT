@@ -25,7 +25,6 @@
 
 **US4: As a car owner, I want to monitor the status of the system, so that I know whether the system is ready to function or not.** <br>
 - Acceptance Criteria#1: I can check the status of the system (online/activated/alarm/offline)<br>
-- Acceptance Criteria#2: I can deactivate the system.<br>
 
 ## State Diagram <br>
 ![ICT720  Group 1_State Diagram](https://github.com/pitijit/Ict720-software-2024/assets/92443678/592f0820-8a42-46fe-b32d-652514e5563f)
