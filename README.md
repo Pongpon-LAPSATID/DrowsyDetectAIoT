@@ -24,8 +24,9 @@
 - Acceptance Criteria#1: I can check the status of the system (online/activated/alarm/offline)<br>
 - Acceptance Criteria#2: I can deactivate the system.<br>
 
-## State Diagram (Drafting) <br>
-<img width="619" alt="image" src="https://github.com/pitijit/Ict720-software-2024/assets/92443678/dd36ccde-ca8a-4491-939e-811fcb25c473">
+## State Diagram <br>
+![ICT720  Group 1_State Diagram](https://github.com/pitijit/Ict720-software-2024/assets/92443678/592f0820-8a42-46fe-b32d-652514e5563f)
+
 
 
 
