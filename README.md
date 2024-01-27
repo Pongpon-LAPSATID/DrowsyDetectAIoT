@@ -20,7 +20,7 @@
 
 **US3: As a car owner, I want to get a notification when the buzzer continuously alarms for more than 1 minute, so that I can contact the car driver to ensure their safety.**
 - Acceptance Criteria#1: I can get the notification (Line notification) when the buzzer continuously alarms for more than 1 minute.<br>
-- Acceptance Criteria#2: I can contact the car driver .<br>
+
 
 
 **US4: As a car owner, I want to monitor the status of the system, so that I know whether the system is ready to function or not.** <br>
