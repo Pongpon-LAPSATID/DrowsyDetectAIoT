@@ -4,25 +4,25 @@
 2. Miss Onsasipat Kasamrach (6622040670)
 3. Mr. Pongpon Lapsatid (6622040316)
           
-## Domain: Car Safety Technology
+## Domain: Drowsiness Detection in Car Rental Service
 ## Stakeholders
 1. Car Driver
 2. Car Owner
    
 ## User Stories (US)
-**US#1: As a car driver, I want to drive without falling asleep, so that I can reach my destination safely.**
-**Acceptance Criteria** <br>
-1.1 I can activate my device.<br>
-1.2 I can check whether my device is online.<br>
-1.3 If I fall asleep (close my eyes for ??? minutes), the buzzer will alarm.<br>
-1.4 The F1 score of drowsiness detection model should be >= xx%<br>
-1.5 I can turn off the buzzer by myself.<br>
-1.6 I can deactivate my device.<br>
-**US#2: As a car owner, we want to check whether our employees falling asleep when they are driving, so that we can know if the accident is caused by recklessness of the employees.** <br>
-**Acceptance Criteria**<br>
-2.1 I can get notification whenever a car driver falls asleep.<br>
-2.2 I can get the csv file that records the timestamp of when the car driver falls asleep.<br>
-2.3 I can see a dashboard UI that shows statistical insight regarding the car driver falling asleep.<br>
+**US1: As a car driver, I want to hear an alarm sound when I am falling asleep, so that I can prevent myself from sleeping while driving the car.**
+- Acceptance Criteria#1: If I close my eyes for 3 seconds continuously, the buzzer will alarm.<br>
+- Acceptance Criteria#2: If I do not close my eyes for 3 seconds continuously, the buzzer must not alarm.<br>
+- Acceptance Criteria#3: I can turn the buzzer alarm sound OFF after the alarm rings.<br>
+
+**US2: As a car driver, I want to check the status of the system, so that I can know whether I can use the system or not.** <br>
+- Acceptance Criteria#1: I can check the status of the system (online/activated/alarm/offline)<br>
+
+**US3: As a car owner, I want to get a notification when the buzzer continuously alarms for more than 1 minute, so that I can contact the car driver to ensure their safety.**
+
+**US4: As a car owner, I want to monitor the status of the system, so that I know whether the system is ready to function or not.** <br>
+- Acceptance Criteria#1: I can check the status of the system (online/activated/alarm/offline)<br>
+- Acceptance Criteria#2: I can deactivate the system.<br>
 
 ## State Diagram (Drafting) <br>
 <img width="619" alt="image" src="https://github.com/pitijit/Ict720-software-2024/assets/92443678/dd36ccde-ca8a-4491-939e-811fcb25c473">
