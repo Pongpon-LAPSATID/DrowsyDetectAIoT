@@ -36,7 +36,8 @@
 ![Overview](https://github.com/pitijit/Ict720-software-2024/assets/85090124/3d4d0916-df95-4997-8b4e-6e8417dd3fb4)
 
 ## Connectivity <br>
-![Uploading [ICT720] Group 1_Connectivity Diagram.png…]()
+![ICT720  Group 1_Connectivity Diagram](https://github.com/pitijit/Ict720-software-2024/assets/92443678/27538e0c-dd15-4fc7-bdf8-0204a16a1600)
+
 
 
 
