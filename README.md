@@ -30,7 +30,8 @@
 ### State Diagram <br>
 ![ICT720  Group 1_State Diagram](https://github.com/pitijit/Ict720-software-2024/assets/92443678/592f0820-8a42-46fe-b32d-652514e5563f)
 ### Sequence Diagram <br>
-![ICT720  Group 1_Sequence Diagram](https://github.com/pitijit/Ict720-software-2024/assets/104715281/eb8d3240-6a26-4358-89c7-ceba7fd312a4)
+![ICT720  Group 1_Sequence Diagram_rev1 by Pongpon](https://github.com/pitijit/Ict720-software-2024/assets/92443678/f3355c8a-0deb-4658-859d-5d2ff12c6c07)
+
 
 ## Overview <br>
 ![Overview](https://github.com/pitijit/Ict720-software-2024/assets/85090124/3d4d0916-df95-4997-8b4e-6e8417dd3fb4)
