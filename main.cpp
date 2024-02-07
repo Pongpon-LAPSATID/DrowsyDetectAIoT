@@ -6,10 +6,6 @@
 #include <PubSubClient.h>
 
 // constants
-#define SOUND_SAMPLE_RATE 16000
-#define SOUND_BUF_SZ      160
-#define SOUND_WND_SZ      100
-
 #define MQTT_BROKER       "broker.hivemq.com"
 #define MQTT_PORT         1883
 #define MQTT_SOUND_TOPIC  "taist/aiot/dev" //pub
