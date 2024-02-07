@@ -1,0 +1,21 @@
+Step
+    - connect with esp32 camera
+    - take a photo from esp32 camera
+    - facial landmark detection and extract the eye regions from image
+    - drowsiness detection
+        - if detected --> 
+            for driver: sound alert
+            for owner: line notfication
+    - collect data in database
+    - dashboard
+
+Source Code Files:
+    - esp32 ex: connection to the board
+    - image ex: capture image, collect image(database)
+    - drowsiness detection.py --> include facial landmark detection and drowsiness detection
+        **** DONE (need change some details)****
+        - (now)webcam --> (desire)image
+        - (now)print alert --> (desire) 1.(driver) sound alert
+                                        2.(owner) line notfication
+        - (not yet) collect XXX data to database
+    - dashboard
