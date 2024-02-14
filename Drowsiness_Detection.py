@@ -12,7 +12,6 @@ path = "..."  # image path
 # compute eye ratio
 # each eye is represented by 6 (x, y)-coordinates
 
-
 def eye_aspect_ratio(eye):
     A = distance.euclidean(eye[1], eye[5])
     B = distance.euclidean(eye[2], eye[4])
@@ -79,8 +78,7 @@ while True:  # !!!! --> change to if device activated !!!!
         ret = cv2.cv2.imread(images)  # read images from according path
 
         frame = imutils.resize(frame, width=450)  # set frame
-        # convert from RGB to gray
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) # convert from RGB to gray
         subjects = detect(gray, 0)
 
         for subject in subjects:
