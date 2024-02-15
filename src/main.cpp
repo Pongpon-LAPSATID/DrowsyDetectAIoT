@@ -16,8 +16,8 @@
 #define MQTT_HB_TOPIC     "taist/aiot/heartbeat/dev" //pub
 #define MQTT_CMD_TOPIC    "taist/aiot/command/dev" //sub
 
-#define WIFI_SSID         "Janjanjan"
-#define WIFI_PASSWORD     "12345678"
+#define WIFI_SSID         "xxx"
+#define WIFI_PASSWORD     "xxx"
 
 // global variables
 WiFiClient wifi_client;
