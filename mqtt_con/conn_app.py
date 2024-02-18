@@ -55,6 +55,18 @@ def on_connect(client, userdata, flags, reason_code, properties):
     client.subscribe(MQTT_SOUND_TOPIC + '#')
     client.subscribe(MQTT_HB_TOPIC + '#')
 
+'''
+def on_message(client, userdata, msg):
+    logging.info('Received message: %s from %s', msg.payload, msg.topic)
+    dev_db = mongo_client.dev_db
+    dev_col = dev_db.devices # database 1: Devices
+    dev_evts = dev_db.dev_events # database 2: Device_events
+    dev_log = dev_db.dev_log # database 3: Device_log
+    user_db = mongo_client.user_db # user database
+    user_cardriver = user_db.car_driver # database 4: car driver
+    user_admin = user_db.admin # database 5: admin (car owner)
+    # extract dev_id from its corresponding topic
+'''
 
 def on_message(client, userdata, msg):
     logging.info('Received message: %s from %s', msg.payload, msg.topic)
