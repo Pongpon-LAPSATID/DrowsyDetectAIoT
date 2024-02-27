@@ -23,7 +23,7 @@ def eye_aspect_ratio(eye):
     return ear
 
 thresh = 0.25  # threshold
-frame_check = 20  # max_count
+frame_check = 60  # max_count
 detect = dlib.get_frontal_face_detector()  # face detection
 predict = dlib.shape_predictor(
     "models/shape_predictor_68_face_landmarks.dat")  # .dat is a trained model
