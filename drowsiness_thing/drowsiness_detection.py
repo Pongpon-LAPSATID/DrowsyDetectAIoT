@@ -7,6 +7,7 @@ import cv2
 import os
 import glob
 from pygame import mixer
+import rpc
 
 # path = "..."  # image path
 
@@ -34,6 +35,11 @@ predict = dlib.shape_predictor(
 
 cap = cv2.VideoCapture(0)  # webcam --> need change to esp32 cam
 flag = 0  # count for alert
+
+# connect to esp32
+def connect_esp32(self):
+        port = self.esp32_port.currentText()
+        self.rpc_master = rpc.rpc_usb_vcp_master(port)
 
 # **** detected by webcam ****
 while True:
