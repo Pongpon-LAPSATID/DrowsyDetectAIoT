@@ -14,4 +14,5 @@ RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 COPY . /code
 
 # run code
-CMD python -u conn_app.py
+#CMD python -u conn_app.py # This branch is for Mock Test of Database. Thus, I use API to create mockup mqtt payload data from the hardwares
+CMD python -u conn_mock_api.py

@@ -2,32 +2,46 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta charset="UTF-8">
-    <title>Item Details</title>
+    <title>DrowsyDetect Car Driver Register</title>
     <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet">
 </head>
 <body>
-    <h1>Welcome to Sound Detector</h1>
-    <input type="text" id="user_name" placeholder="Enter full name"><br>
-    <input type="text" id="user_phone" placeholder="Enter phone number"><br>
-    <input type="text" id="user_address" placeholder="Enter street address"><br>
+    <h1>Drowsy_Detect Car Driver Registration</h1>
+    <input type="text" id="driver_name" placeholder="Enter Driver's Full Name"><br>
+    <input type="text" id="driver_address" placeholder="Enter Driver's Phone Number"><br>
+    <input type="text" id="driver_contact" placeholder="Enter Driver's Email"><br>
+    <input type="text" id="car_model" placeholder="Enter Car Model"><br>
+    <input type="text" id="car_created_at" placeholder="Enter Car's Manufacture Date (YYYYMMDD)"><br>
     <input type="submit" id="submit" value="Submit">
     <script>
         document.getElementById('submit').addEventListener('click', function() {
-            var user_name = document.getElementById('user_name').value;
-            var user_phone = document.getElementById('user_phone').value;
-            var user_address = document.getElementById('user_address').value;
+            var driver_name = document.getElementById('driver_name').value;
+            var driver_address = document.getElementById('driver_address').value;
+            var driver_contact = document.getElementById('driver_contact').value;
+            var driver_registered_at = "_";
+            var car_model = document.getElementById('car_model').value;
+            var car_created_at = document.getElementById('car_created_at').value;
             fetch('/api/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    user_name: user_name,
-                    user_phone: user_phone,
-                    user_address: user_address
+                    driver_name: driver_name,
+                    driver_address: driver_address,
+                    driver_contact: driver_contact,
+                    driver_registered_at: driver_registered_at,
+                    car_model: car_model,
+                    car_created_at: car_created_at
                 })
             }).then(function(response) {
-                return response.json();
+                if(response.status==200){
+                    alert('Registration Successful');
+                    console.log("HTML Frontend OK");
+                    return response.json();
+                } else{
+                    alert(response.status + ': ' + 'Registration Failed.\nPossible Causes:\n1. This user_name is already used.\n2. All inputs are required.');
+                }
             }).then(function(data) {
                 console.log(data);
             }).catch(function(error) {

@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 import json
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -46,6 +46,30 @@ async def register(request: Request):
     #extract data from JSON
     data = await request.json()
     data["timestamp"] = datetime.now()
-    user_col.insert_one(data)
+    # check for abnormal case 1: duplicated user_id with the existing one in db
+    user_doc = user_col.find_one({'driver_name': data['driver_name']}, {'_id': False})
+    if user_doc is not None:
+        resp['error_message'] = f'409: duplicated driver_name is not acceptable'
+        raise HTTPException(status_code=409, detail="Duplicated driver_name is not acceptable")
+        #return jsonable_encoder(resp)
 
+    # check for abnormal case 2: missing info
+    for key in data.keys():
+        value = data[key]
+        if value == "":
+            resp['error_message'] = f'400: missing required info; {data[key]} is required'
+            raise HTTPException(status_code=400, detail=f'missing required info; {data[key]} is required')
+            #return jsonable_encoder(resp)
+
+    data['driver_registered_at'] = datetime.now()
+    user_col.insert_one(data)
+    return jsonable_encoder(resp)
+
+@app.get('/api/list')
+async def on_list(request: Request):
+    resp = {'status':'OK'}
+    # query and return all registered users
+    user_db = mongo_client.user_db
+    user_col = user_db.users
+    resp['car_drivers'] = list(user_col.find({}, {'_id':False}))
     return jsonable_encoder(resp)

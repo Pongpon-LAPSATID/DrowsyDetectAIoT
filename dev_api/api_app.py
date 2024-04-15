@@ -47,8 +47,8 @@ async def on_devreg(dev_id: str, request: Request):
 async def on_devlist(request: Request):
     resp = {'status': 'OK'}
     dev_db = mongo_client.dev_db
-    dev_col = dev_db.devices
-    resp['devices'] = list(dev_col.find({}, {'_id': False}))
+    dev_reg= dev_db.device
+    resp['devices'] = list(dev_reg.find({}, {'_id': False}))
     return jsonable_encoder(resp)
 
 @app.get('/api/devevts/{dev_id}')
