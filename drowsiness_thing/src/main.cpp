@@ -1,83 +1,74 @@
-#include <Arduino.h>
-#include <task.h>
-#include <queue.h>
-#include <WiFi.h>
-#include <WiFiClient.h>
-#include <PubSubClient.h>
+#include "main.h"
+#include "hw_camera.h"
+#include "openmvrpc.h"
 
 // constants
-#define SOUND_SAMPLE_RATE 16000
-#define SOUND_BUF_SZ 160
-#define SOUND_WND_SZ 100
+#define TAG           "main"
 
-#define MQTT_BROKER "broker.hivemq.com"
-#define MQTT_PORT 1883
+#define BUTTON_PIN    0
 
-#define MQTT_HB_TOPIC "taist/aiot/heartbeat/dev" // pub
-#define MQTT_CMD_TOPIC "taist/aiot/command/dev"  // sub
+// static variables
+static uint8_t jpg_buf[20480];
+static uint16_t jpg_sz = 0;
+static bool read_flag = false;
 
-#define WIFI_SSID "xxx"
-#define WIFI_PASSWORD "xxx"
+openmv::rpc_scratch_buffer<256> scratch_buffer;
+openmv::rpc_callback_buffer<8> callback_buffer;
+openmv::rpc_hardware_serial_uart_slave rpc_slave;
 
-// global variables
-WiFiClient wifi_client;
-PubSubClient mqtt_client(wifi_client);
+// static function declarations
+static void print_memory(void);
 
-// queue handle
-QueueHandle_t evt_queue;
-void on_cmd_received(char *topic, byte *payload, unsigned int length)
-{
-  // ignored
-}
+size_t button_read_callback(void *out_data);
+size_t jpeg_image_snapshot_callback(void *out_data);
+size_t jpeg_image_read_callback(void *out_data);
 
-// task to send to MQTT
-void comm_task(void *pvParameter)
-{
-  // initialize serial and network
+// initialize hardware
+void setup() {
   Serial.begin(115200);
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(1000);
-    Serial.println("Connecting to WiFi...");
-  }
-  mqtt_client.setServer(MQTT_BROKER, MQTT_PORT);
-  mqtt_client.setCallback(on_cmd_received);
-  mqtt_client.connect("taist_MQTT_test");
-
-  // communicate with MQTT
-  Serial.printf("connected");
-  if (mqtt_client.connected())
-  {
-    mqtt_client.publish(MQTT_HB_TOPIC, "test");
-  }
+  hw_camera_init();
+  rpc_slave.register_callback(F("button_read"), button_read_callback);
+  rpc_slave.register_callback(F("jpeg_image_snapshot"), jpeg_image_snapshot_callback);
+  rpc_slave.register_callback(F("jpeg_image_read"), jpeg_image_read_callback);
+  rpc_slave.begin();
+  ESP_LOGI(TAG, "Setup complete");
 }
 
-void setup()
-{
-  // prepare WiFi and MQTT
-
-  // initialize RTOS task
-  evt_queue = xQueueCreate(10, sizeof(float));
-
-  // create tasks
-
-  xTaskCreate(
-      comm_task,   // task function
-      "comm_task", // name of task
-      4096,        // stack size of task
-      NULL,        // parameter of the task
-      2,           // priority of the task
-      NULL         // task handle to keep track of created task
-  );
+// main loop
+void loop() {
+  if (read_flag) {
+    rpc_slave.put_bytes(jpg_buf, jpg_sz, 10000);
+    read_flag = false;
+  }
+  rpc_slave.loop();
 }
 
-void loop()
-{
-  // execute MQTT loop
-  if (mqtt_client.connected())
-  {
-    mqtt_client.loop();
-  }
-  delay(1000);
+// Print memory information
+void print_memory() {
+  ESP_LOGI(TAG, "Total heap: %u", ESP.getHeapSize());
+  ESP_LOGI(TAG, "Free heap: %u", ESP.getFreeHeap());
+  ESP_LOGI(TAG, "Total PSRAM: %u", ESP.getPsramSize());
+  ESP_LOGI(TAG, "Free PSRAM: %d", ESP.getFreePsram());
+}
+
+// callback for digital_read
+size_t button_read_callback(void *out_data) {
+  uint8_t state = 1;
+
+  state = !digitalRead(BUTTON_PIN);
+  memcpy(out_data, &state, sizeof(state));
+  return sizeof(state);
+}
+
+// take camera snapshot
+size_t jpeg_image_snapshot_callback(void *out_data) {
+  jpg_sz = hw_camera_jpg_snapshot(jpg_buf);
+  memcpy(out_data, &jpg_sz, sizeof(jpg_sz));
+  return sizeof(jpg_sz);
+}
+
+// start reading image
+size_t jpeg_image_read_callback(void *out_data) {
+  read_flag = true;
+  return 0;
 }
