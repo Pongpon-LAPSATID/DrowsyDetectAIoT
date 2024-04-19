@@ -9,8 +9,6 @@ import glob
 from pygame import mixer
 import rpc
 
-# path = "..."  # image path
-
 mixer.init()
 mixer.music.load("music.wav")
 
@@ -80,40 +78,3 @@ while True:
         break
 cv2.destroyAllWindows()
 cap.release()
-        
-# detected by images
-# while True:  # !!!! --> change to if device activated !!!!
-#     for images in glob.glob(path):
-#         ret = cv2.cv2.imread(images)  # read images from according path
-
-#         frame = imutils.resize(frame, width=450)  # set frame
-#         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) # convert from RGB to gray
-#         subjects = detect(gray, 0)
-
-#         for subject in subjects:
-#             shape = predict(gray, subject)
-#             shape = face_utils.shape_to_np(shape)  # convert to NumPy array
-#             leftEye = shape[lStart:lEnd]
-#             rightEye = shape[rStart:rEnd]
-#             leftEAR = eye_aspect_ratio(leftEye)
-#             rightEAR = eye_aspect_ratio(rightEye)
-#             ear = (leftEAR + rightEAR) / 2.0
-#             leftEyeHull = cv2.convexHull(leftEye)
-#             rightEyeHull = cv2.convexHull(rightEye)
-
-#             # detect drowsiness
-#             if ear < thresh:
-#                 flag += 1
-#                 print(flag)
-#                 # --> !!!! change to 1.(driver) sound alert 2.(owner) line notification !!!!
-#                 if flag >= frame_check:
-#                     print("Drowsy")
-#             else:
-#                 flag = 0
-
-#     # !!!! this part will be deleted after changing the while loop !!!!
-#     cv2.imshow("Frame", frame)
-#     key = cv2.waitKey(1) & 0xFF
-#     if key == ord("q"):
-#         break
-# cv2.destroyAllWindows()
