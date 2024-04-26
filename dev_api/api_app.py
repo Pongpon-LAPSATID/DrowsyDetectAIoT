@@ -108,7 +108,7 @@ async def on_devregister(request: Request):
     if dev_doc is not None:
         dev_reg.update_one({'dev_id': data['dev_id']}, {'$set':{'car_driver_id':data['car_driver_id']}})
         dev_reg.update_one({'dev_id': data['dev_id']}, {'$set':{'created_at':data['created_at']}})
-        dev_reg.update_one({'dev_id': data['dev_id']}, {'$set':{'registered_at':data['registered_at']}})
+        dev_reg.update_one({'dev_id': data['dev_id']}, {'$set':{'registered_at':datetime.now()}})
     
     resp['dev_id editted'] = str(dev_reg.find_one({'dev_id': data['dev_id']}, {'_id': False}))
     return jsonable_encoder(resp)

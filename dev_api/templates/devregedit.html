@@ -1,0 +1,45 @@
+<html lang="en">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta charset="UTF-8">
+        <title>Dev_reg_edit</title>
+        <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet">
+    </head>
+    <body>
+        <h1>Device Registration Edit</h1>
+        <input type="text" id="dev_id" placeholder="Enter dev_id"><br><br>
+        <input type="text" id="car_driver_id" placeholder="Enter car_driver_id"><br><br>
+        <input type="text" id="created_at" placeholder="Enter created_at"><br><br>
+        <input type="submit" id="submit" value="Submit">
+        <script>
+            document.getElementById('submit').addEventListener('click', function() {
+                var dev_id = document.getElementById('dev_id').value;
+                var car_driver_id = document.getElementById('car_driver_id').value;
+                var created_at = document.getElementById('created_at').value;
+                fetch('/api/devregedit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        dev_id: dev_id,
+                        car_driver_id: car_driver_id,
+                        created_at: created_at
+                    })
+                }).then(function(response) {
+                    if(response.status==200){
+                        alert('Edit dev_id: ' + dev_id + ' Data Successfully');
+                        console.log("HTML Frontend OK");
+                        return response.json();
+                    } else{
+                        alert(response.status + ": " + 'Failed to Edit Data.\nPossible Cause: All inputs are required.');
+                    }
+                }).then(function(data) {
+                    console.log(data);
+                }).catch(function(error) {
+                    console.log(error);
+                });
+            });
+        </script>
+    </body>
+</html>
