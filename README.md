@@ -36,8 +36,7 @@
 ## Connectivity <br>
 ![ICT720  Group 1_Connectivity Diagram](https://github.com/pitijit/Ict720-software-2024/assets/92443678/27538e0c-dd15-4fc7-bdf8-0204a16a1600)
 ## Data Modeling<br>
-![ICT720  Group 1_class diagram](https://github.com/pitijit/Ict720-software-2024/assets/92443678/50278481-68e4-4217-b4cd-869feeff0387)
-
+![ICT720  Group 1_class diagram_20240426](https://github.com/pitijit/Ict720_software_2024/assets/92443678/ff78fb4b-e476-44a7-a604-99a67361854c)
 
 
 
