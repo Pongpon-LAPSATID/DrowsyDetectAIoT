@@ -23,7 +23,8 @@
                     },
                     body: JSON.stringify({
                         dev_id: dev_id,
-                        car_driver_id: car_driver_id
+                        car_driver_id: car_driver_id,
+                        created_at: created_at
                     })
                 }).then(function(response) {
                     if(response.status==200){

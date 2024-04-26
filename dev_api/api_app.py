@@ -57,14 +57,14 @@ async def on_devreg(dev_id: str, request: Request):
     resp['log'] = str(dev_id_log)
     return jsonable_encoder(resp)
 
-@app.get('devregister')
+@app.get('/devregister')
 async def on_devregister(request: Request):
     return templates.TemplateResponse(
         request=request, name="devregister.html", content={"dummy":0}
     )
 
 @app.post('/api/devregister')
-async def on_devregister(dev_id: str, request: Request):
+async def on_devregister(request: Request):
     resp = {'status': 'OK'}
     #
     dev_db = mongo_client.dev_db
@@ -90,14 +90,14 @@ async def on_devregister(dev_id: str, request: Request):
     return jsonable_encoder(resp)
 
 
-@app.get('devregedit')
+@app.get('/devregedit')
 async def on_devregedit(request: Request):
     return templates.TemplateResponse(
         request=request, name="devregedit.html", content={"dummy":0}
     )
 
 @app.post('/api/devregedit')
-async def on_devregister(dev_id: str, request: Request):
+async def on_devregister(request: Request):
     resp = {'status': 'OK'}
     #
     dev_db = mongo_client.dev_db
@@ -113,12 +113,28 @@ async def on_devregister(dev_id: str, request: Request):
     resp['dev_id editted'] = str(dev_reg.find_one({'dev_id': data['dev_id']}, {'_id': False}))
     return jsonable_encoder(resp)
 
-@app.get('/api/devlist/{dev_id}')
+@app.get('/api/alldevlist')
 async def on_devlist(request: Request):
+    resp = {'status':'OK'}
+    dev_db = mongo_client.dev_db
+    dev_reg = dev_db.device
+    resp['devices'] = list(dev_reg.find({}, {'_id':False}))
+    return jsonable_encoder(resp)
+
+@app.get('/api/alldevevts')
+async def on_devevts(request: Request):
+    resp = {'status':'OK'}
+    dev_db = mongo_client.dev_db
+    dev_evts = dev_db.device_events
+    resp['dev_evts'] = list(dev_evts.find({}, {'_id':False}))
+    return jsonable_encoder(resp)
+
+@app.get('/api/devlist/{dev_id}')
+async def on_devlist(dev_id: str, request: Request):
     resp = {'status': 'OK'}
     dev_db = mongo_client.dev_db
     dev_reg= dev_db.device
-    resp['devices'] = list(dev_reg.find({}, {'_id': False}))
+    resp['devices'] = list(dev_reg.find({'dev_id': dev_id}, {'_id': False}))
     return jsonable_encoder(resp)
 
 @app.get('/api/devevts/{dev_id}')

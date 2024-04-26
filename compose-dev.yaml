@@ -29,6 +29,14 @@ services:
       - .env
     depends_on:
       - dev_api
+  hw_mock:
+    build: ./hw_mock
+    ports:
+      - ${HW_MOCK_API_PORT}:${HW_MOCK_API_PORT}
+    env_file:
+      - .env
+    depends_on:
+      - mongo
   mongo:
     image: mongo
     restart: always

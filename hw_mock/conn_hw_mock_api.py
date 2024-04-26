@@ -33,6 +33,12 @@ if mongo_port is None:
 mongo_client = MongoClient(mongo_host, int(mongo_port))
 
 # hardware mock api
+@app.get('/hwmock')
+async def hwmock_datagen(request: Request):
+    return templates.TemplateResponse(
+        request=request, name="hwmock.html", context={"dummy":0}
+    )
+
 @app.post('/api/hwmock')
 async def hwmock_datagen(request: Request):
     resp = {'status':'OK'}
@@ -51,6 +57,7 @@ async def hwmock_datagen(request: Request):
     dev_reg = dev_db.device
     dev_evts = dev_db.device_events
     dev_doc = dev_reg.find_one({'dev_id': data['dev_id']}, {'_id': False})
+    # input only data from registered device
     if dev_doc is not None:
         dev_evts.insert_one(data)
         resp['data_inputted'] = str(data)

@@ -24,7 +24,7 @@
                 var dev_location = document.getElementById('dev_location').value;
                 var value = document.getElementById('value').value;
                 var timestamp = document.getElementById('timestamp').value;
-                fetch('api/hwmock', {
+                fetch('/api/hwmock', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
