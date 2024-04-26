@@ -93,11 +93,11 @@ async def on_devregister(request: Request):
 @app.get('/devregedit')
 async def on_devregedit(request: Request):
     return templates.TemplateResponse(
-        request=request, name="devregedit.html", content={"dummy":0}
+        request=request, name="devregister_edit.html", content={"dummy":0}
     )
 
 @app.post('/api/devregedit')
-async def on_devregister(request: Request):
+async def on_devregedit(request: Request):
     resp = {'status': 'OK'}
     #
     dev_db = mongo_client.dev_db
@@ -114,7 +114,7 @@ async def on_devregister(request: Request):
     return jsonable_encoder(resp)
 
 @app.get('/api/alldevlist')
-async def on_devlist(request: Request):
+async def on_alldevlist(request: Request):
     resp = {'status':'OK'}
     dev_db = mongo_client.dev_db
     dev_reg = dev_db.device
@@ -122,7 +122,7 @@ async def on_devlist(request: Request):
     return jsonable_encoder(resp)
 
 @app.get('/api/alldevevts')
-async def on_devevts(request: Request):
+async def on_alldevevts(request: Request):
     resp = {'status':'OK'}
     dev_db = mongo_client.dev_db
     dev_evts = dev_db.device_events
