@@ -2,37 +2,36 @@
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta charset="UTF-8">
-        <title>Dev_reg_edit</title>
+        <title>Car_Owner (Admin) Reg Edit</title>
         <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet">
     </head>
     <body>
-        <h1>Device Registration Edit</h1>
-        <input type="text" id="dev_id" placeholder="Enter dev_id"><br><br>
-        <input type="text" id="car_driver_id" placeholder="Enter car_driver_id"><br><br>
-        <input type="text" id="created_at" placeholder="Enter created_at"><br><br>
+        <h1>Car Owner (Admin) Registration Edit</h1>
+        <input type="text" id="admin_id" placeholder="Enter admin_id"><br><br>
+        <input type="text" id="auth" placeholder="Enter admin's authentication token"><br><br>
         <input type="submit" id="submit" value="Submit">
         <script>
             document.getElementById('submit').addEventListener('click', function() {
-                var dev_id = document.getElementById('dev_id').value;
-                var car_driver_id = document.getElementById('car_driver_id').value;
-                var created_at = document.getElementById('created_at').value;
-                fetch('/api/devregedit', {
+                var admin_id = document.getElementById('admin_id').value;
+                var auth = document.getElementById('auth').value;
+                var admin_registered_at = "_";
+                fetch('/api/carownerregedit', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        dev_id: dev_id,
-                        car_driver_id: car_driver_id,
-                        created_at: created_at
+                        admin_id: admin_id,
+                        auth: auth,
+                        admin_registered_at: admin_registered_at
                     })
                 }).then(function(response) {
                     if(response.status==200){
-                        alert('Edit dev_id: ' + dev_id + ' Data Successfully');
+                        alert('Edit admin_id: ' + admin_id + ' Data Successfully');
                         console.log("HTML Frontend OK");
                         return response.json();
                     } else{
-                        alert(response.status + ": " + 'Failed to Edit Data.\nPossible Cause:\n1) Unauthorized dev_id cannot be inputted.\n2) All inputs are required.');
+                        alert(response.status + ': ' + 'Failed to Edit Data.\nPossible Causes:\n1) Unauthorized admin_id cannot be inputted.\n2) All inputs are required.');
                     }
                 }).then(function(data) {
                     console.log(data);

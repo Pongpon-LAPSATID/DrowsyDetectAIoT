@@ -99,18 +99,28 @@ async def on_devregedit(request: Request):
 @app.post('/api/devregedit')
 async def on_devregedit(request: Request):
     resp = {'status': 'OK'}
-    #
+    # call the database
     dev_db = mongo_client.dev_db
     # register new dev_id
     dev_reg = dev_db.device
     data = await request.json()
     dev_doc = dev_reg.find_one({'dev_id': data['dev_id']}, {'_id': False})
-    if dev_doc is not None:
-        dev_reg.update_one({'dev_id': data['dev_id']}, {'$set':{'car_driver_id':data['car_driver_id']}})
-        dev_reg.update_one({'dev_id': data['dev_id']}, {'$set':{'created_at':data['created_at']}})
-        dev_reg.update_one({'dev_id': data['dev_id']}, {'$set':{'registered_at':datetime.now()}})
+    # check #1: allow to edit only registered devices' data
+    if dev_doc is None:
+        resp['error_message'] = f"403: Failed to Edit Data; {data['dev_id']} is not registered."
+        raise HTTPException(status_code=403, detail=f"403: Failed to Edit Data; {data['dev_id']} is not registered.")
+    # check #2: all fields must be inputted
+    for key in data.keys():
+        value = data[key]
+        if value == "":
+            resp['error_message'] = f'400: missing required info; {data[key]} is required.'
+            raise HTTPException(status_code=400, detail=f'400: missing required info; {data[key]} is required.')
     
-    resp['dev_id editted'] = str(dev_reg.find_one({'dev_id': data['dev_id']}, {'_id': False}))
+    dev_reg.update_one({'dev_id': data['dev_id']}, {'$set':{'car_driver_id':data['car_driver_id']}})
+    dev_reg.update_one({'dev_id': data['dev_id']}, {'$set':{'created_at':data['created_at']}})
+    dev_reg.update_one({'dev_id': data['dev_id']}, {'$set':{'registered_at':datetime.now()}})
+    
+    resp['edited_dev'] = str(dev_reg.find_one({'dev_id': data['dev_id']}, {'_id': False}))
     return jsonable_encoder(resp)
 
 @app.get('/api/alldevlist')

@@ -2,11 +2,11 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta charset="UTF-8">
-    <title>Car_Driver Reg</title>
+    <title>Car_Driver Reg Edit</title>
     <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet">
 </head>
 <body>
-    <h1>Car Driver Registration</h1>
+    <h1>Car Driver Registration Edit</h1>
     <input type="text" id="car_driver_id" placeholder="Enter car_driver_id"><br><br>
     <input type="text" id="driver_name" placeholder="Enter Driver's Full Name"><br><br>
     <input type="text" id="driver_address" placeholder="Enter Driver's Phone Number"><br><br>
@@ -23,7 +23,7 @@
             var driver_registered_at = "_";
             var car_model = document.getElementById('car_model').value;
             var car_created_at = document.getElementById('car_created_at').value;
-            fetch('/api/cardriverreg', {
+            fetch('/api/cardriverregedit', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -39,11 +39,11 @@
                 })
             }).then(function(response) {
                 if(response.status==200){
-                    alert('Registration Successful');
+                    alert('Edit car_driver_id:' + car_driver_id + ' Data Successfully');
                     console.log("HTML Frontend OK");
                     return response.json();
                 } else{
-                    alert(response.status + ': ' + 'Registration Failed.\nPossible Causes:\n1. This driver_name is already used.\n2. All inputs are required.');
+                    alert(response.status + ': ' + 'Failed to Edit Data.\nPossible Causes:\n1) Unauthorized car_driver_id cannot be inputted.\n2) All inputs are required.');
                 }
             }).then(function(data) {
                 console.log(data);

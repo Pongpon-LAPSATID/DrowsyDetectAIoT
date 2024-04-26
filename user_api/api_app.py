@@ -31,20 +31,20 @@ if mongo_port is None:
     sys.exit(1)
 mongo_client = MongoClient(mongo_host, int(mongo_port))
 
-@app.get('/cardriverregister')
-async def register(request: Request):
+@app.get('/cardriverreg')
+async def on_cardriverregister(request: Request):
     return templates.TemplateResponse(
         request=request, name="cardriverreg.html", context={"dummy": 0} #html can access "dummy"'s value via the key "dummy"
     )
 
-@app.get('/carownerregister')
-async def register(request: Request):
+@app.get('/carownerreg')
+async def on_carownerregister(request: Request):
     return templates.TemplateResponse(
         request=request, name="carownerreg.html", context={"dummy":0}
     )
 
 @app.post('/api/cardriverreg')
-async def register(request: Request):
+async def on_cardriverreg(request: Request):
     resp = {'status':'OK'}
     # call the car_driver_db
     car_db = mongo_client.car_db
@@ -52,10 +52,10 @@ async def register(request: Request):
     #extract data from JSON
     data = await request.json()
     # check for abnormal case 1: duplicated user_id with the existing one in db
-    cardv_doc = car_driver_db.find_one({'driver_name': data['driver_name']}, {'_id': False})
+    cardv_doc = car_driver_db.find_one({'car_driver_id': data['car_driver_id']}, {'_id': False})
     if cardv_doc is not None:
-        resp['error_message'] = f'409: duplicated driver_name is not acceptable'
-        raise HTTPException(status_code=409, detail="Duplicated driver_name is not acceptable")
+        resp['error_message'] = f'409: duplicated car_driver_id is not acceptable'
+        raise HTTPException(status_code=409, detail="Duplicated car_driver_id is not acceptable")
         #return jsonable_encoder(resp)
 
     # check for abnormal case 2: missing info
@@ -70,8 +70,8 @@ async def register(request: Request):
     car_driver_db.insert_one(data)
     return jsonable_encoder(resp)
 
-@app.post('api/carownerreg')
-async def register(request: Request):
+@app.post('/api/carownerreg')
+async def on_carownerreg(request: Request):
     resp = {'status':'OK'}
     # call the car_owner_db
     car_db = mongo_client.car_db
@@ -96,16 +96,90 @@ async def register(request: Request):
     car_owner_db.insert_one(data)
     return jsonable_encoder(resp)
 
-@app.get('/api/cardriverlist')
+@app.get('/cardriverregedit')
+async def on_cardriverregedit(request: Request):
+    return templates.TemplateResponse(
+        request=request, name="cardriverreg_edit.html", context={"dummy":0}
+    )
+
+@app.post('/api/cardriverregedit')
+async def on_cardriverregedit(request: Request):
+    resp = {'status':'OK'}
+    # call the car_driver_db
+    car_db = mongo_client.car_db
+    car_driver_db = car_db.car_driver
+    #extract data from JSON
+    data = await request.json()
+    # check for abnormal case 1: duplicated user_id with the existing one in db
+    cardv_doc = car_driver_db.find_one({'car_driver_id': data['car_driver_id']}, {'_id': False})
+    if cardv_doc is None:
+        resp['error_message'] = f"403: Failed to Edit Data; {data['car_driver_id']} is not registered."
+        raise HTTPException(status_code=403, detail=f"403: Failed to Edit Data; {data['car_driver_id']} is not registered.")
+        #return jsonable_encoder(resp)
+
+    # check for abnormal case 2: missing info
+    for key in data.keys():
+        value = data[key]
+        if value == "":
+            resp['error_message'] = f'400: missing required info; {data[key]} is required'
+            raise HTTPException(status_code=400, detail=f'missing required info; {data[key]} is required')
+            #return jsonable_encoder(resp)
+    car_driver_db.update_one({'car_driver_id': data['car_driver_id']}, {'$set':{'driver_name':data['driver_name']}})
+    car_driver_db.update_one({'car_driver_id': data['car_driver_id']}, {'$set':{'driver_address':data['driver_address']}})
+    car_driver_db.update_one({'car_driver_id': data['car_driver_id']}, {'$set':{'driver_contact':data['driver_contact']}})
+    car_driver_db.update_one({'car_driver_id': data['car_driver_id']}, {'$set':{'driver_registered_at':datetime.now()}})
+    car_driver_db.update_one({'car_driver_id': data['car_driver_id']}, {'$set':{'car_model':data['car_model']}})
+    car_driver_db.update_one({'car_driver_id': data['car_driver_id']}, {'$set':{'car_created_at':data['car_created_at']}})
+
+    resp['edited_driver'] = str(car_driver_db.find_one({'car_driver_id':data['car_driver_id']}, {'_id':False}))
+    return jsonable_encoder(resp)
+
+@app.get('/carownerregedit')
+async def on_carownerregedit(request: Request):
+    return templates.TemplateResponse(
+        request=request, name="carownerreg_edit.html", context={"dummy":0}
+    )
+
+@app.post('/api/carownerregedit')
+async def on_carownerregedit(request: Request):
+    resp = {'status':'OK'}
+    # call the car_driver_db
+    car_db = mongo_client.car_db
+    car_owner_db = car_db.car_owner
+    #extract data from JSON
+    data = await request.json()
+    # check for abnormal case 1: duplicated user_id with the existing one in db
+    carow_doc = car_owner_db.find_one({'admin_id': data['admin_id']}, {'_id': False})
+    if carow_doc is None:
+        resp['error_message'] = f"403: Failed to Edit Data; {data['admin_id']} is not registered."
+        raise HTTPException(status_code=403, detail=f"403: Failed to Edit Data; {data['admin_id']} is not registered.")
+        #return jsonable_encoder(resp)
+
+    # check for abnormal case 2: missing info
+    for key in data.keys():
+        value = data[key]
+        if value == "":
+            resp['error_message'] = f'400: missing required info; {data[key]} is required'
+            raise HTTPException(status_code=400, detail=f'missing required info; {data[key]} is required')
+            #return jsonable_encoder(resp)
+    car_owner_db.update_one({'admin_id': data['admin_id']}, {'$set':{'auth':data['auth']}})
+    car_owner_db.update_one({'admin_id': data['admin_id']}, {'$set':{'admin_registered_at':datetime.now()}})
+
+    resp['edited_driver'] = str(car_owner_db.find_one({'admin_id':data['admin_id']}, {'_id':False}))
+    return jsonable_encoder(resp)
+
+
+@app.get('/api/allcardriverlist')
 async def on_list(request: Request):
     resp = {'status':'OK'}
     # query and return all registered car drivers
     car_db = mongo_client.car_db
-    car_driver_db = car_db.users
+    car_driver_db = car_db.car_driver
     resp['car_drivers'] = list(car_driver_db.find({}, {'_id':False}))
     return jsonable_encoder(resp)
 
-@app.get('/api/carownerlist')
+
+@app.get('/api/allcarownerlist')
 async def register(request: Request):
     resp = {'status':'OK'}
     # query and return all registered car owners
