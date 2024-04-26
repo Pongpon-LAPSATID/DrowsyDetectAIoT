@@ -1,0 +1,42 @@
+<html lang="en">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta charset="UTF-8">
+        <title>Car Owner (Admin) Registration</title>
+        <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet">
+    </head>
+    <body>
+        <h1>Car Owner (Admin) Registration</h1>
+        <input type="text" id="admin_id" placeholder="Enter admin_id"><br><br>
+        <input type="text" id="auth" placeholder="Enter admin's authentication token"><br><br>
+        <input type="submit" id="submit" value="Submit">
+        <script>
+            document.getElementById('submit').addEventListener('click', function() {
+                var admin_id = document.getElementById('admin_id').value;
+                var auth = document.getElementById('auth').value;
+                fetch('/api/carownerreg', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        admin_id: admin_id,
+                        auth: auth
+                    })
+                }).then(function(response) {
+                    if(response.status==200){
+                        alert('Registration Successful');
+                        console.log("HTML Frontend OK");
+                        return response.json();
+                    } else{
+                        alert(response.status + ": " + 'Registration Failed.\nPossible Causes:\n1. This admin_id is already used.\n2. All inputs are required');
+                    }
+                }).then(function(data) {
+                    console.log(data);
+                }).catch(function(error) {
+                    console.log(error);
+                });
+            });
+        </script>
+    </body>
+</html>

@@ -1,0 +1,44 @@
+<html lang="en">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta charset="UTF-8">
+        <title>Dev_reg</title>
+        <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet">
+    </head>
+    <body>
+        <h1>Device Registration</h1>
+        <input type="text" id="dev_id" placeholder="Enter dev_id"><br><br>
+        <input type="text" id="car_driver_id" placeholder="Enter car_driver_id"><br><br>
+        <input type="text" id="created_at" placeholder="Enter created_at"><br><br>
+        <input type="submit" id="submit" value="Submit">
+        <script>
+            document.getElementById('submit').addEventListener('click', function() {
+                var dev_id = document.getElementById('dev_id').value;
+                var car_driver_id = document.getElementById('car_driver_id').value;
+                var created_at = document.getElementById('created_at').value;
+                fetch('/api/devregister', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        dev_id: dev_id,
+                        car_driver_id: car_driver_id
+                    })
+                }).then(function(response) {
+                    if(response.status==200){
+                        alert('Registration Successful');
+                        console.log("HTML Frontend OK");
+                        return response.json();
+                    } else{
+                        alert(response.status + ": " + 'Registration Failed.\nPossible Causes:\n1. This admin_id is already used.\n2. All inputs are required');
+                    }
+                }).then(function(data) {
+                    console.log(data);
+                }).catch(function(error) {
+                    console.log(error);
+                });
+            });
+        </script>
+    </body>
+</html>
