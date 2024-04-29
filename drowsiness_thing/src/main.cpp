@@ -174,7 +174,6 @@ void ei_use_result(ei_impulse_result_t result) {
         if (bb.value == 0) {
             continue;
         }
-        
         Serial.printf("%s (%f) ", bb.label, bb.value);
         if (bb.label == "Open") {
             json_doc.clear();
@@ -183,33 +182,33 @@ void ei_use_result(ei_impulse_result_t result) {
             json_doc["timestamp"] = millis();
             // Publish the bounding box label
             publishMessage(json_doc.as<String>().c_str());
+            close_count = 0; // Reset close count if Open label detected
         }
         else if (bb.label == "Close") {
-            close_count++; // Increment the count for "Close" labels
-            json_doc.clear();
-            json_doc["eye_status"] = "0";
-            json_doc["alarm_status"] = "0";
-            json_doc["timestamp"] = millis();
-            // Publish the bounding box label
-            publishMessage(json_doc.as<String>().c_str());
+            close_count++; // Increment close count for "Close" labels
+            if (close_count >= 3) {
+                Serial.println("Alarm on");
+                json_doc.clear();
+                json_doc["eye_status"] = "0";
+                json_doc["alarm_status"] = "1"; // Set alarm status to "1"
+                json_doc["timestamp"] = millis();
+                // Publish the alarm status
+                publishMessage(json_doc.as<String>().c_str());
+            } else {
+                json_doc.clear();
+                json_doc["eye_status"] = "0";
+                json_doc["alarm_status"] = "0";
+                json_doc["timestamp"] = millis();
+                // Publish the bounding box label
+                publishMessage(json_doc.as<String>().c_str());
+            }
         }
     }
-
-    // Check if "Close" label count reaches 3 or more
-    if (close_count >= 3) {
-        Serial.println("Alarm on");
-        json_doc.clear();
-        json_doc["eye_status"] = "0";
-        json_doc["alarm_status"] = "1"; // Set alarm status to "1"
-        json_doc["timestamp"] = millis();
-        // Publish the alarm status
-        publishMessage(json_doc.as<String>().c_str());
-    }
-
     if (!bb_found) {
         Serial.println("No objects found");
     }
 }
+
 
 
 // MQTT callback
