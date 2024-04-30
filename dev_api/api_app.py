@@ -2,6 +2,7 @@ import os
 import sys
 import logging
 from datetime import datetime
+from pytz import timezone
 import json
 
 from fastapi import FastAPI, Request, HTTPException
@@ -11,6 +12,13 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from pymongo import MongoClient
+
+# timezone config
+tz = timezone(os.getenv('TZ', None))
+if tz is None:
+    logging.error('TZ undefined.')
+    sys.exit(1)
+timestamp = datetime.now(tz=tz)
 
 # logging configuration
 logging.basicConfig(level=logging.INFO,
@@ -43,7 +51,7 @@ async def on_devreg(dev_id: str, request: Request):
         'dev_id': dev_id,
         'car_driver_id': None,
         'created_at': None,
-        'registered_at': datetime.now()
+        'registered_at': timestamp
     }
     dev_id = dev_reg.insert_one(new_dev).inserted_id
     resp['dev_id'] = str(dev_id)
@@ -84,9 +92,17 @@ async def on_devregister(request: Request):
             resp['error_message'] = f'400: missing required info; {data[key]} is required'
             raise HTTPException(status_code=400, detail=f'missing required info; {data[key]} is required')
             #return jsonable_encoder(resp)
-    data['registered_at'] = datetime.now()
-    dev_id = dev_reg.insert_one(data).inserted_id
-    resp['registrar'] = str(dev_id)
+    data['registered_at'] = timestamp
+    dev_objid = dev_reg.insert_one(data).inserted_id
+    resp['dev_id'] = str(dev_objid)
+    # register new dev_log for the new dev_id
+    dev_log = dev_db.device_log
+    new_devlog = {
+        'dev_id': data['dev_id'],
+        'status': 'offline'
+    }
+    dev_id_log = dev_log.insert_one(new_devlog).inserted_id
+    resp['log'] = str(dev_id_log)
     return jsonable_encoder(resp)
 
 
@@ -118,7 +134,7 @@ async def on_devregedit(request: Request):
     
     dev_reg.update_one({'dev_id': data['dev_id']}, {'$set':{'car_driver_id':data['car_driver_id']}})
     dev_reg.update_one({'dev_id': data['dev_id']}, {'$set':{'created_at':data['created_at']}})
-    dev_reg.update_one({'dev_id': data['dev_id']}, {'$set':{'registered_at':datetime.now()}})
+    dev_reg.update_one({'dev_id': data['dev_id']}, {'$set':{'registered_at':timestamp}})
     
     resp['edited_dev'] = str(dev_reg.find_one({'dev_id': data['dev_id']}, {'_id': False}))
     return jsonable_encoder(resp)
@@ -157,12 +173,11 @@ async def on_devevts(dev_id: str, request: Request):
     resp['dev_evts'] = list(dev_evts.find({'dev_id': dev_id}, {'_id': False}))
     return jsonable_encoder(resp)
 
-@app.get('api/devlog')
+@app.get('/api/devlog')
 async def on_devlog(request: Request):
     ''' See the current status of each registered device '''
     resp = {'status':'OK'}
     dev_db = mongo_client.dev_db
     dev_log = dev_db.device_log
-    data = await request.json()
     resp['log'] = list(dev_log.find({}, {'_id': False}))
     return jsonable_encoder(resp)
