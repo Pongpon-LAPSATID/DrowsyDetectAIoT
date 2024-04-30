@@ -9,6 +9,15 @@ from pymongo import MongoClient
 
 import paho.mqtt.client as mqtt
 
+from linebot.v3.messaging import (
+    Configuration,
+    ApiClient,
+    MessagingApi,
+    PushMessageRequest,
+    TextMessage
+)
+from pprint import pprint
+
 # logging configuration
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
@@ -52,12 +61,48 @@ if MQTT_CMD_TOPIC is None:
     logging.error('MQTT_CMD_TOPIC undefined.')
     sys.exit(1)
 
+# LINE Bot Config
+channel_access_token = os.getenv('LINE_ACCESS_TOKEN', None)
+if channel_access_token is None:
+    print('Failed to retrieve LINE_ACCESS_TOKEN from environment variables.')
+    sys.exit(1)
+user_1_id = os.getenv('USER_1_ID', None)
+if user_1_id is None:
+    print('Failed to retrieve USER_1_ID from environment variables.')
+    sys.exit(1)
+
+configuration = Configuration(
+    access_token=channel_access_token
+)
+
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, reason_code, properties):
     logging.info('Connected to MQTT Broker.')
     client.subscribe(MQTT_HB_TOPIC + '#')
     client.subscribe(MQTT_CARID_LOG_TOPIC + '#')
     client.subscribe(MQTT_CARID_ALARM_TOPIC + '#')
+    
+    # Plan B: Publish {'CMD':'ON'}
+    #cmd_on_json = json.dumps({'CMD':'ON'}).encode('utf-8')
+    #client.publish(MQTT_CMD_TOPIC, cmd_on_json)
+
+    '''
+    # Plan A: Let Admin tick the checkbox on web ui to activate each dev_id {'CMD':'ON'}
+    # Plan B: if server (this PC) can connect to mqtt, activate all dev_ids automatically.
+    # publish mqtt cmd topic; send {'CMD': ON} to ESP32 board
+    ## send cmd topic to hardware to activate the drowsy_detect system
+    cmd_dict = {'CMD': 'ON'} # {'CMD': 'ON'}
+    if mqtt_client.connected():
+        try:
+            cmd_json = json.dumps(cmd_dict)
+            mqtt_client.publish(MQTT_CMD_TOPIC, cmd_json)
+        except Exception as e:
+            print(f'Error; Exception: {e}')
+            cmd_dict['CMD'] = 'OFF'
+            print(f'CMD = OFF')
+    else:
+        pass
+    '''
 
 def on_message(client, userdata, msg):
     logging.info('Received message: %s from %s', msg.payload, msg.topic)
@@ -86,25 +131,13 @@ def on_message(client, userdata, msg):
         if dev_doc is not None:
             msg_data = json.loads(msg.payload)
             latest_ms = round(msg_data['timestamp'] * 1000)
-
-            if (round(time.time()*1000) - latest_ms) >= 3000:
-                dev_log.update_one({'dev_id': dev_id}, {'$set':{'status':'offline'}})
-            else:
-                dev_log.update_one({'dev_id': dev_id}, {'$set':{'status':'online'}})
-
-    # publish mqtt cmd topic; send {'CMD': ON} to ESP32 board
-    ## send cmd topic to hardware to activate the drowsy_detect system
-    cmd_dict = {'CMD': 'ON'} # {'CMD': 'ON'}
-    if mqtt_client.connected():
-        try:
-            cmd_json = json.dumps(cmd_dict)
-            mqtt_client.publish(MQTT_CMD_TOPIC, cmd_json)
-        except Exception as e:
-            print(f'Error; Exception: {e}')
-            cmd_dict['CMD'] = 'OFF'
-            print(f'CMD = OFF')
     else:
-        pass
+        latest_ms = 0
+    # if no heartbeat after 5 sec from the latest heartbeat, status --> offline
+    if (round(time.time()*1000) - latest_ms) >= 5000:
+        dev_log.update_one({'dev_id': dev_id}, {'$set':{'status':'offline'}})
+    else:
+        dev_log.update_one({'dev_id': dev_id}, {'$set':{'status':'online'}})
 
     # for dev_evts mqtt topics
     if (evt_type == 'log') or (evt_type == 'alarm'): # subject to change later, depending on hardware implementation result
@@ -116,12 +149,43 @@ def on_message(client, userdata, msg):
             dev_evts.insert_one({
                 'dev_id': dev_id,
                 'car_driver_id': car_driver_id,
-                'eye_status': msg_data['eyes'], # eye_status ({'eye': ???}) from ESP32's drowsiness detection module
-                'alarm_status': msg_data['alarm'], # alarm_status ({'alarm': ???}) from ESP32's drowsiness detection module
-                'dev_location': msg_data['gps_lonlat'], # GPS location (lon/lat) from GPS module
-                'value': msg_data['value'], # may be omitted; Prof's example uses 'value' as 'status': 'silent', 'detected', etc.
+                'eye_status': msg_data['eye_status'], # eye_status ({'eye': ???}) from ESP32's drowsiness detection module
+                'alarm_status': msg_data['alarm_status'], # alarm_status ({'alarm': ???}) from ESP32's drowsiness detection module
+                #'dev_location': msg_data['gps_lonlat'], # GPS location (lon/lat) from GPS module
+                #'value': msg_data['value'], # may be omitted; Prof's example uses 'value' as 'status': 'silent', 'detected', etc.
                 'timestamp': msg_data['timestamp'] # timestamp record at real-time from ESP32's drowsiness detection module
             })
+            
+            # send LINE Bot Alert if {'alarm':1} for 1 min continuously
+            if evt_type == 'alarm':
+                dev_evts_lastmin = dev_evts.find({'dev_id':dev_id}, {'alarm_status':True})[-60:]
+                slp_counter = 0
+                for i in dev_evts_lastmin:
+                    if i['alarm_status'] == "1":
+                        slp_counter += 1
+
+                if slp_counter == 60: # abs(slp_counter - 60) <= 10:
+                    # send LINE BOT Notification
+                    
+                    '''
+                    with ApiClient(configuration) as api_client:
+                        line_bot_api = MessagingApi(api_client) # api_instance
+                        car_driver_name = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['driver_name']
+                        contact = car_driver_db.find_one({'car_driver_id': car_driver_id}, {'_id':False})
+                        noti_text = TextMessage(text=f'dev_id: {dev_id} alarms continuously for 1 min !\nContact {car_driver_name} Immediately !!\nContact:\n{contact}')
+                        x_line_retry_key = 'x_line_retry_key_example' # make it yourself
+
+                        push_message_request = PushMessageRequest(
+                            to=user_1_id,
+                            messages=[noti_text]
+                        )
+                        try:
+                            api_response = line_bot_api.push_message(push_message_request, x_line_retry_key=x_line_retry_key)
+                            print("The response of MessagingApi->push_message:\n")
+                            pprint(api_response)
+                        except Exception as e:
+                            print("Exception when calling MessagingApi->push_message: %s\n" % e)
+                    '''
 
     ''' # For case that conn_app.py has to command the buzzer to alarm
     # check the status of that device
