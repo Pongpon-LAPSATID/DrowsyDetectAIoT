@@ -11,7 +11,6 @@
         <input type="text" id="car_driver_id" placeholder="Enter car_driver_id"><br><br>
         <input type="text" id="eye_status" placeholder="Enter eye_status (1 = closed, 0 = open)"><br><br>
         <input type="text" id="alarm_status" placeholder="Enter alarm_status (1 = alarm ON, 0 = alarm OFF)"><br><br>
-        <input type="text" id="timestamp" placeholder="Enter timestamp"><br><br>
         <input type="submit" id="submit" value="Submit">
         <script>
             document.getElementById('submit').addEventListener('click', function() {
@@ -21,7 +20,7 @@
                 var alarm_status = document.getElementById('alarm_status').value;
                 //var dev_location = document.getElementById('dev_location').value;
                 //var value = document.getElementById('value').value;
-                var timestamp = document.getElementById('timestamp').value;
+                //var timestamp = document.getElementById('timestamp').value;
                 fetch('/api/hwmock', {
                     method: 'POST',
                     headers: {
@@ -34,7 +33,7 @@
                         alarm_status: alarm_status,
                         //dev_location: dev_location,
                         //value: value,
-                        timestamp: timestamp
+                        //timestamp: timestamp
                     })
                 }).then(function(response) {
                     if(response.status==200){
