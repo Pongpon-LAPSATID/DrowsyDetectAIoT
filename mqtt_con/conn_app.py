@@ -2,6 +2,7 @@ import os
 import sys
 import logging
 from datetime import datetime
+from pytz import timezone
 import json
 import time
 
@@ -17,6 +18,13 @@ from linebot.v3.messaging import (
     TextMessage
 )
 from pprint import pprint
+
+# timezone config
+tz = timezone(os.getenv('TZ', None))
+if tz is None:
+    logging.error('TZ undefined.')
+    sys.exit(1)
+timestamp = datetime.now(tz=tz)
 
 # logging configuration
 logging.basicConfig(level=logging.INFO,
