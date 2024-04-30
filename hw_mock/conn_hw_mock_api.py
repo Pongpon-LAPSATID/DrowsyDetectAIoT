@@ -22,7 +22,7 @@ tz = timezone(os.getenv('TZ', None))
 if tz is None:
     logging.error('TZ undefined.')
     sys.exit(1)
-date = datetime.now(tz=tz)
+timestamp = datetime.now(tz=tz)
 
 # logging configuration
 logging.basicConfig(level=logging.INFO,
@@ -57,7 +57,7 @@ async def hwmock_datagen(request: Request):
     resp = {'status':'OK'}
     # get data from POST request
     data = await request.json()
-    data['timestamp'] = date
+    data['timestamp'] = timestamp
     # input to device_event database
     ## check for abnormal case 2: missing info
     for key in data.keys():
@@ -108,7 +108,7 @@ async def dbexport(db: str, request: Request):
     db_data_df = pd.DataFrame(db_data)
     db_data_df.to_csv(os.path.join(
         os.path.dirname(os.path.abspath(__file__)), 
-        f"{date.strftime('%Y%m%d%H%M%S')}_{db}.csv"), 
+        f"{timestamp.strftime('%Y%m%d%H%M%S')}_{db}.csv"), 
         index=False)
     
     return jsonable_encoder(resp)

@@ -2,6 +2,7 @@ import os
 import sys
 import logging
 from datetime import datetime
+from pytz import timezone
 import json
 
 from fastapi import FastAPI, Request, HTTPException
@@ -11,6 +12,13 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from pymongo import MongoClient
+
+# timezone config
+tz = timezone(os.getenv('TZ', None))
+if tz is None:
+    logging.error('TZ undefined.')
+    sys.exit(1)
+timestamp = datetime.now(tz=tz)
 
 # logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -66,7 +74,7 @@ async def on_cardriverreg(request: Request):
             raise HTTPException(status_code=400, detail=f'missing required info; {data[key]} is required')
             #return jsonable_encoder(resp)
 
-    data['driver_registered_at'] = datetime.now()
+    data['driver_registered_at'] = timestamp
     car_driver_db.insert_one(data)
     return jsonable_encoder(resp)
 
@@ -92,7 +100,7 @@ async def on_carownerreg(request: Request):
             resp['error_message'] = f'400: missing required info; {data[key]} is required'
             raise HTTPException(status_code=400, detail=f'missing required info; {data[key]} is required')
             #return jsonable_encoder(resp)
-    data['admin_registered_at'] = datetime.now()
+    data['admin_registered_at'] = timestamp
     car_owner_db.insert_one(data)
     return jsonable_encoder(resp)
 
@@ -127,7 +135,7 @@ async def on_cardriverregedit(request: Request):
     car_driver_db.update_one({'car_driver_id': data['car_driver_id']}, {'$set':{'driver_name':data['driver_name']}})
     car_driver_db.update_one({'car_driver_id': data['car_driver_id']}, {'$set':{'driver_address':data['driver_address']}})
     car_driver_db.update_one({'car_driver_id': data['car_driver_id']}, {'$set':{'driver_contact':data['driver_contact']}})
-    car_driver_db.update_one({'car_driver_id': data['car_driver_id']}, {'$set':{'driver_registered_at':datetime.now()}})
+    car_driver_db.update_one({'car_driver_id': data['car_driver_id']}, {'$set':{'driver_registered_at':timestamp}})
     car_driver_db.update_one({'car_driver_id': data['car_driver_id']}, {'$set':{'car_model':data['car_model']}})
     car_driver_db.update_one({'car_driver_id': data['car_driver_id']}, {'$set':{'car_created_at':data['car_created_at']}})
 
@@ -163,7 +171,7 @@ async def on_carownerregedit(request: Request):
             raise HTTPException(status_code=400, detail=f'missing required info; {data[key]} is required')
             #return jsonable_encoder(resp)
     car_owner_db.update_one({'admin_id': data['admin_id']}, {'$set':{'auth':data['auth']}})
-    car_owner_db.update_one({'admin_id': data['admin_id']}, {'$set':{'admin_registered_at':datetime.now()}})
+    car_owner_db.update_one({'admin_id': data['admin_id']}, {'$set':{'admin_registered_at':timestamp}})
 
     resp['edited_driver'] = str(car_owner_db.find_one({'admin_id':data['admin_id']}, {'_id':False}))
     return jsonable_encoder(resp)
