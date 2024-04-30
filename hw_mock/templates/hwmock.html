@@ -44,7 +44,7 @@
                         console.log('HTML Frontend OK');
                         return response.json();
                     } else{
-                        alert(response.status + ": " + 'Registration Failed.\nPossible Causes:\n1. All inputs are required');
+                        alert(response.status + ": " + 'Registration Failed.\nPossible Causes:\n1. All inputs are required\n2. Only Accept Registered Dev_id');
                     }
                 }).then(function(data) {
                     console.log(data);
