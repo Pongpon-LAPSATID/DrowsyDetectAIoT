@@ -22,7 +22,7 @@
             <ons-input id="user_name" modifier="underbar" placeholder="User name" float></ons-input>
         </p>
         <p>
-            <ons-input id="userId" modifier="underbar" placeholder="user ID" float></ons-input>
+            <ons-input id="userId" modifier="underbar" placeholder="User ID" float></ons-input>
         </p>
         <ons-button id="cmd_btn">Submit</ons-button>
         
@@ -42,16 +42,20 @@
             }).catch((err) => {
                 console.log(err.code, err.message);
             });
-            document.getElementById('cmd_btn').onclick = function () {
-                liff.sendMessages([{
-                    type: 'text',
-                    text: 'UserId: ' + userId
-                }]).then(() => {
-                    liff.closeWindow();
-                }).catch((err) => {
-                    console.log(err.code, err.message);
-                });
-            };
+            liff.ready.then(() => {
+                document.getElementById('cmd_btn').onclick = function () {
+                    liff.sendMessages([{
+                        type: 'text',
+                        text: 'UserId: ' + userId
+                    }]).then(() => {
+                        liff.closeWindow();
+                    }).catch((err) => {
+                        console.log(err.code, err.message);
+                    });
+                };
+            }).catch((err) => {
+                console.log(err.code, err.message);
+            });
         }).catch((err) => {
             console.log(err.code, err.message);
         });
