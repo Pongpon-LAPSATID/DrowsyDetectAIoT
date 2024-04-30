@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      .message {
+        padding: 10px;
+        background: #ddd;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="lineprofile" style="display: none;">
+      <img width="100px" id="profileImage" src="" />
+      <div>
+        Hello <b><span id="profileName">Name</span></b>
+      </div>
+      <div>UID <span id="profileUID">UID</span></div>
+    </div>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script>
+      let userId = "";
+
+      const logOut = () => {
+        liff.logout();
+        window.location.reload();
+      };
+      const main = async () => {
+        //const liff_id = '{{LIFF_ID}}';
+        await liff.init({ liffId:  "2004759541-VQq6WkqP"});
+        if (liff.isLoggedIn()) {
+          const profile = await liff.getProfile();
+
+          // update profile
+          profileImage.src = profile.pictureUrl;
+          profileName.innerText = profile.displayName;
+          profileUID.innerText = profile.userId;
+
+          // collect userId
+          userId = profile.userId;
+
+          // show profile
+          lineprofile.style.display = "block";
+        } else {
+          liff.login();
+        }
+      };
+      main();
+    </script>
+  </body>
+</html>
