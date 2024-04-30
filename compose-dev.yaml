@@ -37,6 +37,22 @@ services:
       - .env
     depends_on:
       - mongo
+  line_bot:
+    build: ./line_bot
+    ports:
+      - ${LINE_WEBHOOK_PORT}:${LINE_WEBHOOK_PORT}
+    env_file:
+      - .env
+    depends_on:
+      - user_api
+  userid_find:
+    build: ./userid_find
+    ports:
+      - ${USER_ID_PORT}:${USER_ID_PORT}
+    env_file:
+      - .env
+    depends_on:
+      - user_api
   mongo:
     image: mongo
     restart: always
