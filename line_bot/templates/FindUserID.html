@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="https://line.me/favicon.ico" />
+    <link rel="stylesheet" href="https://unpkg.com/onsenui/css/onsenui.css">
+    <link rel="stylesheet" href="https://unpkg.com/onsenui/css/onsen-css-components.min.css">
+    <script src="https://unpkg.com/onsenui/js/onsenui.min.js"></script>
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <title>Registration</title>
+</head>
+<body>
+    <ons-page id="main_page">
+        <ons-toolbar>
+            <div class="center">Device register</div>
+        </ons-toolbar>
+        <p>
+            <h3>Welcome</h3>
+        </p>
+        <p>
+            <ons-input id="user_name" modifier="underbar" placeholder="User name" float></ons-input>
+        </p>
+        <p>
+            <ons-input id="userId" modifier="underbar" placeholder="user ID" float></ons-input>
+        </p>
+        <ons-button id="cmd_btn">Submit</ons-button>
+        
+    </ons-page>
+
+    <script>
+        const liff_id = '{{LIFF_ID}}';
+        liff.init({
+            liffId: liff_id,
+            withLoginOnExternalBrowser: true
+        }).then(() => {
+            liff.getProfile().then((profile) => {
+                const user_name = profile.displayName;
+                const userId = profile.userId;
+                document.getElementById('user_name').value = user_name;
+                document.getElementById('userId').value = userId;
+            }).catch((err) => {
+                console.log(err.code, err.message);
+            });
+            document.getElementById('cmd_btn').onclick = function () {
+                liff.sendMessages([{
+                    type: 'text',
+                    text: 'UserId: ' + userId
+                }]).then(() => {
+                    liff.closeWindow();
+                }).catch((err) => {
+                    console.log(err.code, err.message);
+                });
+            };
+        }).catch((err) => {
+            console.log(err.code, err.message);
+        });
+    </script>
+</body>
+</html>

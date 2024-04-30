@@ -26,15 +26,13 @@ from linebot.v3.webhooks import (
     UnfollowEvent
 )
 
-from pymongo import MongoClient
-
 # logging configuration
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 # linebot configuration
 channel_secret = os.getenv('LINE_CHANNEL_SECRET', None)
-liff_id = os.getenv('LIFF_ID', None)
+liff_id = os.getenv('USER_ID_FIND_LIFF_ID', None) # change LIFF_ID here
 if channel_secret is None:
     print('Specify LINE_CHANNEL_SECRET as environment variable.')
     sys.exit(1)
@@ -85,7 +83,7 @@ async def handle_callback(request: Request):
 @app.get('/')
 async def liff_ui(request: Request):
     return templates.TemplateResponse(
-        request=request, name="index.html", context={"LIFF_ID": liff_id}
+        request=request, name="FindUserID.html", context={"LIFF_ID": liff_id}
     )
 
 # code to handle Follow event
