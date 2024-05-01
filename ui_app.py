@@ -29,6 +29,22 @@ show_df_button = st.button("Show Dataframe!")
 if show_df_button:
     st.dataframe(df)
 
+# filtered dataframe for alarm_status = 0
+alarm_status_0_df = df[df["alarm_status"] == 0]
+alarm_line_df = alarm_status_0_df.groupby(
+    'car_driver_id').size().reset_index(name='alarm_count')
+
+# line chart
+if not alarm_line_df.empty:
+    alarm_line_fig = px.line(alarm_line_df, x="car_driver_id", y="alarm_count", title="Overall Performance of Car Driver (Evaluated by The Number of Times of The Alarm)",
+                             labels={"car_driver_id": "Car Driver ID", "alarm_count": "Performance"})
+    alarm_line_fig.update_yaxes(showticklabels=False)
+    st.plotly_chart(alarm_line_fig, use_container_width=True)
+else:
+    st.subheader("No data to display for line chart with selected filters.")
+
+st.markdown("---")  # create space between components
+
 # create for car
 st.sidebar.header("Choose the filter: ")
 car = st.sidebar.multiselect("Pick Car", df["dev_id"].unique())
@@ -45,6 +61,7 @@ else:  # choose specific driver
     df3 = df2[df2["car_driver_id"].isin(driver)]
 
 filtered_df = df3
+col1, col2 = st.columns((2))
 
 # group by car_driver_id and eye_status
 category_df = filtered_df.groupby(
@@ -63,25 +80,22 @@ pivot_df = category_df.pivot(
 plot_df = pivot_df.reset_index().melt(id_vars='car_driver_id',
                                       var_name='eye_status', value_name='eye_status_count')
 
-# filtered dataframe for alarm_status = 0
-alarm_status_0_df = df[df["alarm_status"] == 0]
+# group by car_driver_id and alarm_status
+alarm_category_df = filtered_df.groupby(
+    ['car_driver_id', 'alarm_status']).size().reset_index(name='alarm_count')
 
-# group by car_driver_id and count occurrences of alarm_status = 0 (no alarm)
-alarm_line_df = alarm_status_0_df.groupby(
-    'car_driver_id').size().reset_index(name='alarm_count')
+# define mapping dictionary for alarm_status labels
+alarm_status_labels = {0: "No Alarm", 1: "Alarm"}
+alarm_category_df['alarm_status'] = alarm_category_df['alarm_status'].map(
+    alarm_status_labels)
 
-if not alarm_line_df.empty:
-    # create line chart for alarm count
-    alarm_line_fig = px.line(alarm_line_df, x="car_driver_id", y="alarm_count", title="Overall Performance of Car Driver (Evaluated by The Number of Times of The Alarm)",
-                             labels={"car_driver_id": "Car Driver ID", "alarm_count": "Performance"})
-    alarm_line_fig.update_yaxes(showticklabels=False)
-    st.plotly_chart(alarm_line_fig, use_container_width=True)
-else:
-    st.subheader("No data to display for line chart with selected filters.")
+# pivot the dataframe for plotting grouped bars
+alarm_pivot_df = alarm_category_df.pivot(
+    index='car_driver_id', columns='alarm_status', values='alarm_count').fillna(0)
 
-st.markdown("---")  # create space between components
-
-col1, col2 = st.columns((2))
+# convert pivot dataframe to long format for plotting
+alarm_plot_df = alarm_pivot_df.reset_index().melt(
+    id_vars='car_driver_id', var_name='alarm_status', value_name='alarm_count')
 
 with col1:
     # bar chart for eye status
@@ -99,23 +113,6 @@ with col1:
     else:
         st.subheader(
             "No data to display for eye status count with selected filters.")
-
-# group by car_driver_id and alarm_status
-alarm_category_df = filtered_df.groupby(
-    ['car_driver_id', 'alarm_status']).size().reset_index(name='alarm_count')
-
-# define mapping dictionary for alarm_status labels
-alarm_status_labels = {0: "No Alarm", 1: "Alarm"}
-alarm_category_df['alarm_status'] = alarm_category_df['alarm_status'].map(
-    alarm_status_labels)
-
-# pivot the dataframe for plotting grouped bars
-alarm_pivot_df = alarm_category_df.pivot(
-    index='car_driver_id', columns='alarm_status', values='alarm_count').fillna(0)
-
-# convert pivot dataframe to long format for plotting
-alarm_plot_df = alarm_pivot_df.reset_index().melt(
-    id_vars='car_driver_id', var_name='alarm_status', value_name='alarm_count')
 
 with col2:
     # bar chart for alarm
