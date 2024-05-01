@@ -95,7 +95,6 @@ with col1:
                                 labels={"car_driver_id": "Car Driver ID",
                                         "eye_status_count": "Count", "eye_status": "Eye Status"},
                                 barmode="group", color_discrete_map=eye_status_color_map)
-        eye_status_fig.update_layout(legend_traceorder="reversed")
         st.plotly_chart(eye_status_fig, use_container_width=True)
     else:
         st.subheader(
@@ -130,7 +129,6 @@ with col2:
                            labels={"car_driver_id": "Car Driver ID",
                                    "alarm_count": "Count", "alarm_status": "Alarm Status"},
                            barmode="group", color_discrete_map=alarm_color_map)
-        alarm_fig.update_layout(legend_traceorder="reversed")
         st.plotly_chart(alarm_fig, use_container_width=True)
     else:
         st.subheader(
