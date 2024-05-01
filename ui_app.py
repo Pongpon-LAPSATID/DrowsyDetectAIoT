@@ -1,37 +1,106 @@
-import pandas as pd
 import streamlit as st
+import plotly.express as px
+import pandas as pd
+import os
+import warnings
+warnings.filterwarnings('ignore')
 
-[start_year, end_year] = st.sidebar.slider(
-    'Start Year', 2018, 2023, [2018, 2023])
-start_year = start_year - 2000
-end_year = end_year - 2000
-month_dict = {"Jan": "01", "Feb": "02", "Mar": "03", "Apr": "04", "May": "05", "Jun": "06",
-              "Jul": "07", "Aug": "08", "Sep": "09", "Oct": "10", "Nov": "11", "Dec": "12"}
-month_name = st.sidebar.selectbox("Month", list(month_dict.keys()))
-month = month_dict[month_name]
+# headline
+st.set_page_config(page_title="Superstore!!!",
+                   page_icon=":clipboard:", layout="wide")
 
-# main
-years = [str(year) for year in range(start_year, end_year+1)]
-tabs = st.tabs(years)
-year_idx = 0
-for year in years:
-    url = f'http://peaoc.pea.co.th/loadprofile/files/07/dt07{year}{month}30.xls'
-    idx = f'{year}-{month}'
-    if idx not in st.session_state:
-        st.session_state[idx] = pd.read_excel(url)
-        df = pd.read_excel(url, sheet_name='Source', header=4)
-        tmp_df = df.copy()
-        tmp_df.iloc[0:96, 1:6] = tmp_df.iloc[1:97, 1:6]  # move one row up
-        tmp_df.drop(index=96, inplace=True)  # drop last row
-        if (tmp_df.WORKDAY.iloc[-1] < tmp_df.WORKDAY.iloc[0]) & (tmp_df.WORKDAY.iloc[-1] < tmp_df.WORKDAY.iloc[-2]):
-            print('bad data')
-            # substitue with data before
-            tmp_df.iloc[95, 1:6] = tmp_df.iloc[94, 1:6]
-        st.session_state[idx] = tmp_df
-        st.line_chart(tmp_df.WORKDAY)
+st.title(" :clipboard: Car Rental Database")
+st.markdown(
+    '<style>div.block-container{padding-top:1rem;}</style>', unsafe_allow_html=True)
+
+# upload csv
+fl = st.file_uploader(":file_folder: Upload a file",
+                      type=(["csv", "txt", "xlsx", "xls"]))
+if fl is not None:
+    filename = fl.name
+    st.write(filename)
+    df = pd.read_csv(filename, encoding="ISO-8859-1")
+else:
+    os.chdir(r"C:\Users\Fern\Desktop\Ict720_software_2024")
+    df = pd.read_csv("20240501075148_device_events.csv", encoding="ISO-8859-1")
+
+# show dataframe
+show_df_button = st.button("Show Dataframe!")
+if show_df_button:
+    st.dataframe(df)
+
+col1, col2 = st.columns((2))
+
+# create for car
+st.sidebar.header("Choose the filter: ")
+car = st.sidebar.multiselect("Pick Car", df["dev_id"].unique())
+if not car:  # if not select car
+    df2 = df.copy()
+else:  # choose specific car
+    df2 = df[df["dev_id"].isin(car)]
+
+# create for driver
+driver = st.sidebar.multiselect("Pick Driver", df["car_driver_id"].unique())
+if not driver:  # if not select driver
+    df3 = df2.copy()
+else:  # choose specific driver
+    df3 = df2[df2["car_driver_id"].isin(driver)]
+
+filtered_df = df3
+
+# group by car_driver_id and eye_status
+category_df = filtered_df.groupby(
+    ['car_driver_id', 'eye_status']).size().reset_index(name='count')
+
+# define mapping dictionary for eye_status labels
+eye_status_labels = {0: "Open", 1: "Close"}
+category_df['eye_status'] = category_df['eye_status'].map(
+    eye_status_labels)  # replace numeric eye_status with labels
+
+# pivot the dataframe for plotting grouped bars
+pivot_df = category_df.pivot(
+    index='car_driver_id', columns='eye_status', values='count').fillna(0)
+
+# convert pivot dataframe to long format for plotting
+plot_df = pivot_df.reset_index().melt(id_vars='car_driver_id',
+                                      var_name='eye_status', value_name='count')
+# filtered dataframe for eye_status = 0
+eye_status_1_df = filtered_df[filtered_df["eye_status"] == 0]
+
+# group by car_driver_id and count occurrences of eye_status = 1
+line_df = eye_status_1_df.groupby(
+    'car_driver_id').size().reset_index(name='count')
+
+with col1:
+    # line
+    if not line_df.empty:
+        # create line chart
+        line_fig = px.line(line_df, x="car_driver_id", y="count", title="Overall Performance of Car Driver",
+                           labels={"car_driver_id": "Car Driver ID", "count": "Performance"})
+        line_fig.update_yaxes(showticklabels=False)
+        # Display the line chart in Streamlit
+        st.plotly_chart(line_fig)
     else:
-        tmp_df = st.session_state[idx]
-    with tabs[year_idx]:
-        new_tmp_df = st.data_editor(tmp_df)
-        st.line_chart(new_tmp_df.WORKDAY)
-    year_idx += 1
+        st.subheader(
+            "No data to display for line chart with selected filters.")
+with col2:
+    # bar chart with swapped colors for eye_status
+    if not plot_df.empty:
+        # define color mapping (dark blue for eye_status = 0, light blue for eye_status = 1)
+        color_map = {'Open': '#1f77b4', 'Close': '#aec7e8'}
+
+        # create bar chart with specified color mapping
+        fig = px.bar(plot_df, x="car_driver_id", y="count", color="eye_status",
+                     title="Eye Status Count",
+                     labels={"car_driver_id": "Car Driver ID",
+                             "count": "Count", "eye_status": "Eye Status"},
+                     barmode="group",
+                     color_discrete_map=color_map)
+
+        # reorder legend items (put 'Open' first)
+        fig.update_layout(legend_traceorder="reversed")
+
+        # display the bar chart in Streamlit
+        st.plotly_chart(fig)
+    else:
+        st.subheader("No data to display with selected filters.")
