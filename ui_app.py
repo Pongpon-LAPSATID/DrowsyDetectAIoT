@@ -79,14 +79,14 @@ if not alarm_line_df.empty:
 else:
     st.subheader("No data to display for line chart with selected filters.")
 
-st.markdown("---")  # Create space between components
+st.markdown("---")  # create space between components
 
 col1, col2 = st.columns((2))
 
 with col1:
-    # bar chart for eye status count
+    # bar chart for eye status
     if not plot_df.empty:
-        # define color mapping (dark blue for eye_status = 0, light blue for eye_status = 1)
+        # define color mapping
         eye_status_color_map = {'Open': '#1f77b4', 'Close': '#aec7e8'}
 
         # create bar chart for eye status count with specified color mapping
@@ -95,45 +95,41 @@ with col1:
                                 labels={"car_driver_id": "Car Driver ID",
                                         "eye_status_count": "Count", "eye_status": "Eye Status"},
                                 barmode="group", color_discrete_map=eye_status_color_map)
-
-        # reorder legend items
         eye_status_fig.update_layout(legend_traceorder="reversed")
         st.plotly_chart(eye_status_fig, use_container_width=True)
     else:
         st.subheader(
             "No data to display for eye status count with selected filters.")
 
-# Group by car_driver_id and alarm_status
+# group by car_driver_id and alarm_status
 alarm_category_df = filtered_df.groupby(
     ['car_driver_id', 'alarm_status']).size().reset_index(name='alarm_count')
 
-# Define mapping dictionary for alarm_status labels
+# define mapping dictionary for alarm_status labels
 alarm_status_labels = {0: "No Alarm", 1: "Alarm"}
 alarm_category_df['alarm_status'] = alarm_category_df['alarm_status'].map(
     alarm_status_labels)
 
-# Pivot the dataframe for plotting grouped bars
+# pivot the dataframe for plotting grouped bars
 alarm_pivot_df = alarm_category_df.pivot(
     index='car_driver_id', columns='alarm_status', values='alarm_count').fillna(0)
 
-# Convert pivot dataframe to long format for plotting
+# convert pivot dataframe to long format for plotting
 alarm_plot_df = alarm_pivot_df.reset_index().melt(
     id_vars='car_driver_id', var_name='alarm_status', value_name='alarm_count')
 
 with col2:
-    # check if data is available to plot
+    # bar chart for alarm
     if not alarm_plot_df.empty:
-        # Define color mapping (e.g., green for no alarm, red for alarm)
+        # define color mapping
         alarm_color_map = {'No Alarm': '#2ca02c', 'Alarm': '#d62728'}
 
-        # Create bar chart with specified color mapping for alarm status count
+        # create bar chart with specified color mapping for alarm status count
         alarm_fig = px.bar(alarm_plot_df, x="car_driver_id", y="alarm_count", color="alarm_status",
                            title="Alarm Status Count by Car Driver",
                            labels={"car_driver_id": "Car Driver ID",
                                    "alarm_count": "Count", "alarm_status": "Alarm Status"},
                            barmode="group", color_discrete_map=alarm_color_map)
-
-        # Reorder legend items
         alarm_fig.update_layout(legend_traceorder="reversed")
         st.plotly_chart(alarm_fig, use_container_width=True)
     else:
