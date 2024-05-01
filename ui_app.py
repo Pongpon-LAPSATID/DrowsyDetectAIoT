@@ -91,7 +91,7 @@ with col1:
 
         # create bar chart for eye status count with specified color mapping
         eye_status_fig = px.bar(plot_df, x="car_driver_id", y="eye_status_count", color="eye_status",
-                                title="Eye Status Count",
+                                title="Eye Status Count by Car Driver",
                                 labels={"car_driver_id": "Car Driver ID",
                                         "eye_status_count": "Count", "eye_status": "Eye Status"},
                                 barmode="group", color_discrete_map=eye_status_color_map)
