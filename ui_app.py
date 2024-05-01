@@ -65,42 +65,39 @@ pivot_df = category_df.pivot(
 plot_df = pivot_df.reset_index().melt(id_vars='car_driver_id',
                                       var_name='eye_status', value_name='count')
 # filtered dataframe for eye_status = 0
-eye_status_1_df = filtered_df[filtered_df["eye_status"] == 0]
+eye_status_0_df = df[df["alarm_status"] == 0]
 
-# group by car_driver_id and count occurrences of eye_status = 1
-line_df = eye_status_1_df.groupby(
+# group by car_driver_id and count occurrences of eye_status = 0 (open)
+line_df = eye_status_0_df.groupby(
     'car_driver_id').size().reset_index(name='count')
 
-with col1:
-    # line
-    if not line_df.empty:
-        # create line chart
-        line_fig = px.line(line_df, x="car_driver_id", y="count", title="Overall Performance of Car Driver",
-                           labels={"car_driver_id": "Car Driver ID", "count": "Performance"})
-        line_fig.update_yaxes(showticklabels=False)
-        # Display the line chart in Streamlit
-        st.plotly_chart(line_fig)
-    else:
-        st.subheader(
-            "No data to display for line chart with selected filters.")
-with col2:
-    # bar chart with swapped colors for eye_status
-    if not plot_df.empty:
-        # define color mapping (dark blue for eye_status = 0, light blue for eye_status = 1)
-        color_map = {'Open': '#1f77b4', 'Close': '#aec7e8'}
+if not line_df.empty:
+    # create line chart
+    line_fig = px.line(line_df, x="car_driver_id", y="count", title="Overall Performance of Car Driver",
+                        labels={"car_driver_id": "Car Driver ID", "count": "Performance"})
+    line_fig.update_yaxes(showticklabels=False)
+    st.plotly_chart(line_fig, use_container_width=True)
+else:
+    st.subheader(
+        "No data to display for line chart with selected filters.")
+    
+st.markdown("---")  # Create space between components
 
-        # create bar chart with specified color mapping
-        fig = px.bar(plot_df, x="car_driver_id", y="count", color="eye_status",
-                     title="Eye Status Count",
-                     labels={"car_driver_id": "Car Driver ID",
-                             "count": "Count", "eye_status": "Eye Status"},
-                     barmode="group",
-                     color_discrete_map=color_map)
+# bar chart
+if not plot_df.empty:
+    # define color mapping (dark blue for eye_status = 0, light blue for eye_status = 1)
+    color_map = {'Open': '#1f77b4', 'Close': '#aec7e8'}
 
-        # reorder legend items (put 'Open' first)
-        fig.update_layout(legend_traceorder="reversed")
+    # create bar chart with specified color mapping
+    fig = px.bar(plot_df, x="car_driver_id", y="count", color="eye_status",
+                    title="Eye Status Count",
+                    labels={"car_driver_id": "Car Driver ID",
+                            "count": "Count", "eye_status": "Eye Status"},
+                    barmode="group",
+                    color_discrete_map=color_map)
 
-        # display the bar chart in Streamlit
-        st.plotly_chart(fig)
-    else:
-        st.subheader("No data to display with selected filters.")
+    # reorder legend items
+    fig.update_layout(legend_traceorder="reversed")
+    st.plotly_chart(fig, use_container_width=True)
+else:
+    st.subheader("No data to display with selected filters.")
