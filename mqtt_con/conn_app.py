@@ -115,17 +115,7 @@ def on_connect(client, userdata, flags, reason_code, properties):
         pass
     '''
 
-
-prev_iter_timestamp = 0 # previous_iteration_timestamp; init variable to use in on_message for collecting approx. the last minute's alarm messages
-#slp_counter = 0
-#just_alert = False
-alert_delay_counter = 0
-
 def on_message(client, userdata, msg):
-    global prev_iter_timestamp
-    global alert_delay_counter
-    #global just_alert
-
     logging.info('Received message: %s from %s', msg.payload, msg.topic)
     # database & its collections for data from ESP32 data
     dev_db = mongo_client.dev_db
@@ -154,7 +144,7 @@ def on_message(client, userdata, msg):
         dev_doc = dev_reg.find_one({'dev_id': dev_id}, {'_id': False})
         if dev_doc is not None: # recognize only registered dev_id's heartbeat
             #dev_latestms_dict[dev_id] = msg_data['timestamp']
-            dev_log.update_one({'dev_id': dev_id}, {'$set':{'latest_hb_ms': msg_data['timestamp']}})
+            dev_log.update_one({'dev_id': dev_id}, {'$set':{'latest_hb': msg_data['timestamp']}})
 
     # for dev_evts mqtt topics
     if (evt_type == 'log') or (evt_type == 'alarm'): # subject to change later, depending on hardware implementation result
@@ -180,18 +170,27 @@ def on_message(client, userdata, msg):
                 
                 # send LINE Bot Alert if {'alarm':1} for 1 min continuously
                 if evt_type == 'alarm':
-                    #slp_counter = 0
-                    dev_evts_last60 = list(dev_evts.find({'dev_id':dev_id}, {'_id': False}))[-60:]
+                    dev_evts_last60 = list(dev_evts.find({'dev_id':dev_id}, {'_id': False}))[-5:]
                     dev_evts_last60 = dev_evts_last60[-1::-1]
                     dev_evts_lastmin = []
+                    prev_iter_timestamp = dev_log.find_one({'dev_id':dev_id}, {'prev_iter_timestamp':True})['prev_iter_timestamp']
+                    #slp_counter = dev_log.find_one({'dev_id':dev_id}, {'slp_counter':True})['slp_counter']
+                    alert_delay_counter = dev_log.find_one({'dev_id':dev_id}, {'alert_delay_counter':True})['alert_delay_counter']
+                    print('==============')
+                    print(f'dev_id: {dev_id} is alarming !!')
                     print(f'prev_iter_timestamp: {prev_iter_timestamp}')
                     for i in dev_evts_last60:
                         # count sleep counter only if alarm = 1 (ON) and that timestamp is not far apart from its previous timestamp more than 5 sec
                         if (i['alarm_status'] == "1") and ((int(prev_iter_timestamp) - int(i['timestamp'])) <= 5):
                         #if (i['alarm_status'] == "1") and ((i['timestamp'] - prev_iter_timestamp) <= timedelta(seconds=5)): # for actual use
                             dev_evts_lastmin.append(i)
+                            # update prev_iter_timestamp variable
                             prev_iter_timestamp = int(i['timestamp']) # for mock test
                             #prev_iter_timestamp = i['timestamp'] # for actual use
+
+                            # update prev_iter_timestamp data in the dev_log database
+                            dev_log.update_one({'dev_id': dev_id}, {'$set':{'prev_iter_timestamp':prev_iter_timestamp}})
+
                             
                         else:
                             break
@@ -199,69 +198,61 @@ def on_message(client, userdata, msg):
                     print(f'latest_timestamp: {msg_data["timestamp"]}')
                     print('------')
                     slp_counter = max(1, len(dev_evts_lastmin))
-                    #slp_counter += len(dev_evts_lastmin)
-                    
-                    '''
-                    for i in dev_evts_lastmin:
-                        # count sleep counter only if alarm = 1 (ON) and that timestamp is not far apart from its previous timestamp more than 5 sec
-                        if (i['alarm_status'] == "1") and ((int(i['timestamp']) - int(prev_iter_timestamp)) <= 5): # for mock test
-                        #if (i['alarm_status'] == "1") and ((i['timestamp'] - prev_iter_timestamp) <= timedelta(seconds=5)): # for actual use
-                            if slp_counter != 1:
-                                slp_counter += 1
-                            else:
-                                slp_counter = 2
-                        else:
-                            slp_counter = 1
-                    '''
+                    dev_log.update_one({'dev_id':dev_id}, {'$set':{'slp_counter':slp_counter}})
                     print(f'slp_counter: {slp_counter}')
 
                     
                     #if (slp_counter != 0) and (slp_counter % 60 == 0):
                         # send LINE BOT Notification
                         ## for mock test to save quota
-                    if (slp_counter == 60):
-                        if (alert_delay_counter % 60 == 0):
+                    if (slp_counter == 5):
+                        if (alert_delay_counter % 5 == 0):
                             driver_name = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['driver_name']
                             driver_address = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['driver_address']
                             driver_contact = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['driver_contact']
                             driver_registered_at = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['driver_registered_at']
                             car_model = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['car_model']
                             car_created_at = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['car_created_at']
+                            
+                            # LINE Bot Alert push message
+                            ## for mock test
                             print(f'dev_id: {dev_id} alarms continuously for greater than 1 min !\nContact Car Driver Immediately !!\nContact:\ncar_driver_id: {car_driver_id}\ndriver_name: {driver_name}\ndriver_address: {driver_address}\ndriver_contact: {driver_contact}\ndriver_registered_at: {driver_registered_at}\ncar_model: {car_model}\ncar_created_at: {car_created_at}')
                         
-                        alert_delay_counter += 1
-                    
-                    
-                        ''' # for actual implementation
-                        with ApiClient(configuration) as api_client:
-                            line_bot_api = MessagingApi(api_client) # api_instance
-                            driver_name = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['driver_name']
-                            driver_address = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['driver_address']
-                            driver_contact = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['driver_contact']
-                            driver_registered_at = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['driver_registered_at']
-                            car_model = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['car_model']
-                            car_created_at = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['car_created_at']
-                            noti_text = TextMessage(text=f'dev_id: {dev_id} alarms continuously for greater than 1 min !\nContact Car Driver Immediately !!\nContact:\ncar_driver_id: {car_driver_id}\ndriver_name: {driver_name}\ndriver_address: {driver_address}\ndriver_contact: {driver_contact}\ndriver_registered_at: {driver_registered_at}\ncar_model: {car_model}\ncar_created_at: {car_created_at}')
-                            #x_line_retry_key = 'x_line_retry_key_example' # make it yourself
+                            ''' ## for actual implementation
+                            with ApiClient(configuration) as api_client:
+                                line_bot_api = MessagingApi(api_client) # api_instance
+                                driver_name = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['driver_name']
+                                driver_address = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['driver_address']
+                                driver_contact = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['driver_contact']
+                                driver_registered_at = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['driver_registered_at']
+                                car_model = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['car_model']
+                                car_created_at = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['car_created_at']
+                                noti_text = TextMessage(text=f'dev_id: {dev_id} alarms continuously for greater than 1 min !\nContact Car Driver Immediately !!\nContact:\ncar_driver_id: {car_driver_id}\ndriver_name: {driver_name}\ndriver_address: {driver_address}\ndriver_contact: {driver_contact}\ndriver_registered_at: {driver_registered_at}\ncar_model: {car_model}\ncar_created_at: {car_created_at}')
+                                #x_line_retry_key = 'x_line_retry_key_example' # make it yourself
 
-                            push_message_request = PushMessageRequest(
-                                to=user_1_id,
-                                messages=[noti_text]
-                            )
-                            try:
-                                api_response = line_bot_api.push_message(push_message_request)
-                                print("The response of MessagingApi->push_message:\n")
-                                pprint(api_response)
-                                alert_delay_counter += 1
-                                #just_alert = True
-                            except Exception as e:
-                                print("Exception when calling MessagingApi->push_message: %s\n" % e)
-                        '''
+                                push_message_request = PushMessageRequest(
+                                    to=user_1_id,
+                                    messages=[noti_text]
+                                )
+                                try:
+                                    api_response = line_bot_api.push_message(push_message_request)
+                                    print("The response of MessagingApi->push_message:\n")
+                                    pprint(api_response)
+
+                                except Exception as e:
+                                    print("Exception when calling MessagingApi->push_message: %s\n" % e)
+                            '''
+                        alert_delay_counter += 1
+                        dev_log.update_one({'dev_id':dev_id}, {'$set':{'alert_delay_counter':alert_delay_counter}})
+
                     else:
                         alert_delay_counter = 0
+                        dev_log.update_one({'dev_id':dev_id}, {'$set':{'alert_delay_counter':alert_delay_counter}})
 
-                    print(f'alert_delay_counter: {alert_delay_counter}')    
+                    print(f'alert_delay_counter: {alert_delay_counter}')
+                    # reset prev_iter_timestamp to 0 to prepare for next mqtt message    
                     prev_iter_timestamp = 0
+                    dev_log.update_one({'dev_id': dev_id}, {'$set':{'prev_iter_timestamp':prev_iter_timestamp}})
                     print('==============')
 
 
