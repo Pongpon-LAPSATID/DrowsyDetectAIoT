@@ -1,7 +1,7 @@
 import os
 import sys
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from pytz import timezone
 import json
 import time
@@ -74,6 +74,9 @@ channel_access_token = os.getenv('LINE_ACCESS_TOKEN', None)
 if channel_access_token is None:
     print('Failed to retrieve LINE_ACCESS_TOKEN from environment variables.')
     sys.exit(1)
+# user_id of the LINE Account that LINE Bot will send alert message to
+## use for demo only
+## for real production; use LINE Messaging API to collect all userId securely without explicitly writing them out manually in .env
 user_1_id = os.getenv('USER_1_ID', None)
 if user_1_id is None:
     print('Failed to retrieve USER_1_ID from environment variables.')
@@ -112,7 +115,17 @@ def on_connect(client, userdata, flags, reason_code, properties):
         pass
     '''
 
+
+prev_iter_timestamp = 0 # previous_iteration_timestamp; init variable to use in on_message for collecting approx. the last minute's alarm messages
+#slp_counter = 0
+#just_alert = False
+alert_delay_counter = 0
+
 def on_message(client, userdata, msg):
+    global prev_iter_timestamp
+    global alert_delay_counter
+    #global just_alert
+
     logging.info('Received message: %s from %s', msg.payload, msg.topic)
     # database & its collections for data from ESP32 data
     dev_db = mongo_client.dev_db
@@ -122,140 +135,136 @@ def on_message(client, userdata, msg):
     # database & its collections for 
     car_db = mongo_client.car_db
     car_driver_db = car_db.car_driver # car_driver_db: auto INC, car_model, car_created_at, driver_name, driver_address, driver_contact, driver_registered_at
-    car_owner_db = car_db.car_owner # (car owner = admin level user): admin_id, auth
+    #car_owner_db = car_db.car_owner # (car owner = admin level user): admin_id, auth
 
     # extract dev_id from its corresponding mqtt topic: either MQTT_CARID_LOG or MQTT_CARID_ALARM Topic
     dev_id = msg.topic.split('/')[-1]
-
+    print(f'dev_id: {dev_id}')
     # retrieve car_driver_id from dev_id
-    car_driver_id = dev_reg.find_one({'dev_id':dev_id}, {'_id': False})['car_driver_id']
+    
+    # extract the mqtt payload received
+    msg_data = json.loads(msg.payload)
 
     # get the event type: log, alarm, or heartbeat
     evt_type = msg.topic.split('/')[-2]
-
+    print(f'evt_type: {evt_type}')
+    
     # for heartbeat mqtt topic
     if evt_type == 'heartbeat':
         dev_doc = dev_reg.find_one({'dev_id': dev_id}, {'_id': False})
-        if dev_doc is not None:
-            msg_data = json.loads(msg.payload)
-            latest_ms = round(msg_data['timestamp'] * 1000)
-    else:
-        latest_ms = 0
-    # if no heartbeat after 5 sec from the latest heartbeat, status --> offline
-    if (round(time.time()*1000) - latest_ms) >= 5000:
-        dev_log.update_one({'dev_id': dev_id}, {'$set':{'status':'offline'}})
-    else:
-        dev_log.update_one({'dev_id': dev_id}, {'$set':{'status':'online'}})
+        if dev_doc is not None: # recognize only registered dev_id's heartbeat
+            #dev_latestms_dict[dev_id] = msg_data['timestamp']
+            dev_log.update_one({'dev_id': dev_id}, {'$set':{'latest_hb_ms': msg_data['timestamp']}})
 
     # for dev_evts mqtt topics
     if (evt_type == 'log') or (evt_type == 'alarm'): # subject to change later, depending on hardware implementation result
-        dev_doc = dev_reg.find_one({'dev_id': dev_id}, {'_id':False})
-        # Do the following if the dev_id of the hardware (which sent this mqtt message) is already registered in our database
-        if dev_doc is not None:
-            msg_data = json.loads(msg.payload) # get the payload of the mqtt mesage received
-            # insert msg_data into device_event database
-            dev_evts.insert_one({
-                'dev_id': dev_id,
-                'car_driver_id': car_driver_id,
-                'eye_status': msg_data['eye_status'], # eye_status ({'eye': ???}) from ESP32's drowsiness detection module
-                'alarm_status': msg_data['alarm_status'], # alarm_status ({'alarm': ???}) from ESP32's drowsiness detection module
-                #'dev_location': msg_data['gps_lonlat'], # GPS location (lon/lat) from GPS module
-                #'value': msg_data['value'], # may be omitted; Prof's example uses 'value' as 'status': 'silent', 'detected', etc.
-                'timestamp': msg_data['timestamp'] # timestamp record at real-time from ESP32's drowsiness detection module
-            })
-            
-            # send LINE Bot Alert if {'alarm':1} for 1 min continuously
-            if evt_type == 'alarm':
-                dev_evts_lastmin = dev_evts.find({'dev_id':dev_id}, {'alarm_status':True})[-60:]
-                slp_counter = 0
-                for i in dev_evts_lastmin:
-                    if i['alarm_status'] == "1":
-                        slp_counter += 1
-
-                if slp_counter == 60: # abs(slp_counter - 60) <= 10:
-                    # send LINE BOT Notification
-                    
-                    '''
-                    with ApiClient(configuration) as api_client:
-                        line_bot_api = MessagingApi(api_client) # api_instance
-                        car_driver_name = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['driver_name']
-                        contact = car_driver_db.find_one({'car_driver_id': car_driver_id}, {'_id':False})
-                        noti_text = TextMessage(text=f'dev_id: {dev_id} alarms continuously for 1 min !\nContact {car_driver_name} Immediately !!\nContact:\n{contact}')
-                        x_line_retry_key = 'x_line_retry_key_example' # make it yourself
-
-                        push_message_request = PushMessageRequest(
-                            to=user_1_id,
-                            messages=[noti_text]
-                        )
-                        try:
-                            api_response = line_bot_api.push_message(push_message_request, x_line_retry_key=x_line_retry_key)
-                            print("The response of MessagingApi->push_message:\n")
-                            pprint(api_response)
-                        except Exception as e:
-                            print("Exception when calling MessagingApi->push_message: %s\n" % e)
-                    '''
-
-    ''' # For case that conn_app.py has to command the buzzer to alarm
-    # check the status of that device
-    dev_status_log = dev_log.find_one({'dev_id': dev_id}, {'_id': False})
-
-    # check alarm status of that device
-    if dev_status_log['status'] == 'alarm':
-        dev_alarm = 1 # alarm == ON
-    else:
-        dev_alarm = 0 # alarm == OFF
-
-    # Case #1: If evt_type == log (i.e. if {"eyes":"closed"})
-    if evt_type == 'log':
-        dev_doc = dev_reg.find_one({'dev_id': dev_id})
-        # Do the following if the dev_id of the hardware (which sent this mqtt message) is already registered in our database
-        if dev_doc is not None:
-            # if status of that device is 'activated' or 'alarm'
-            if (dev_status_log['status'] == 'activated') or (dev_status_log['status'] == 'alarm'):
-                msg_data = json.loads(msg.payload) # get the payload (i.e. body) of the mqtt message received
-                # insert this data into device_event database (class)
+        car_driver_id = dev_reg.find_one({'dev_id':dev_id}, {'_id': False})['car_driver_id']
+        print(f'dev_id: {dev_id} || car_driver_id: {car_driver_id}')
+        # check the dev_id, car_driver_id correctness
+        ## proceed only if they are valid
+        if (msg_data['dev_id'] == dev_id) and (msg_data['car_driver_id'] == car_driver_id):
+            dev_doc = dev_reg.find_one({'dev_id': dev_id}, {'_id':False})
+            # Do the following if the dev_id of the hardware (which sent this mqtt message) is already registered in our database
+            if dev_doc is not None:
+                #msg_data = json.loads(msg.payload) # get the payload of the mqtt mesage received
+                # insert msg_data into device_event database
                 dev_evts.insert_one({
-                    'dev_id': dev_id,
-                    'car_driver_id': car_driver_id,
-                    'eye_status': msg_data['eyes'], # eye_status ({'eye': ???}) from ESP32's drowsiness detection module
-                    'alarm_status': dev_alarm, # or use msg_data['alarm'] # alarm_status ({'alarm': ???}) from ESP32's drowsiness detection module
-                    'dev_location': msg_data['gps_lonlat'], # GPS location (lon/lat) from GPS module
-                    'value': msg_data['value'], # may be omitted; Prof's example uses 'value' as 'status': 'silent', 'detected', etc.
+                    'dev_id': msg_data['dev_id'],
+                    'car_driver_id': msg_data['car_driver_id'],
+                    'eye_status': msg_data['eye_status'], # eye_status ({'eye': ???}) from ESP32's drowsiness detection module
+                    'alarm_status': msg_data['alarm_status'], # alarm_status ({'alarm': ???}) from ESP32's drowsiness detection module
+                    #'dev_location': msg_data['gps_lonlat'], # GPS location (lon/lat) from GPS module
+                    #'value': msg_data['value'], # may be omitted; Prof's example uses 'value' as 'status': 'silent', 'detected', etc.
                     'timestamp': msg_data['timestamp'] # timestamp record at real-time from ESP32's drowsiness detection module
                 })
+                
+                # send LINE Bot Alert if {'alarm':1} for 1 min continuously
+                if evt_type == 'alarm':
+                    #slp_counter = 0
+                    dev_evts_last60 = list(dev_evts.find({'dev_id':dev_id}, {'_id': False}))[-60:]
+                    dev_evts_last60 = dev_evts_last60[-1::-1]
+                    dev_evts_lastmin = []
+                    print(f'prev_iter_timestamp: {prev_iter_timestamp}')
+                    for i in dev_evts_last60:
+                        # count sleep counter only if alarm = 1 (ON) and that timestamp is not far apart from its previous timestamp more than 5 sec
+                        if (i['alarm_status'] == "1") and ((int(prev_iter_timestamp) - int(i['timestamp'])) <= 5):
+                        #if (i['alarm_status'] == "1") and ((i['timestamp'] - prev_iter_timestamp) <= timedelta(seconds=5)): # for actual use
+                            dev_evts_lastmin.append(i)
+                            prev_iter_timestamp = int(i['timestamp']) # for mock test
+                            #prev_iter_timestamp = i['timestamp'] # for actual use
+                            
+                        else:
+                            break
+                    
+                    print(f'latest_timestamp: {msg_data["timestamp"]}')
+                    print('------')
+                    slp_counter = max(1, len(dev_evts_lastmin))
+                    #slp_counter += len(dev_evts_lastmin)
+                    
+                    '''
+                    for i in dev_evts_lastmin:
+                        # count sleep counter only if alarm = 1 (ON) and that timestamp is not far apart from its previous timestamp more than 5 sec
+                        if (i['alarm_status'] == "1") and ((int(i['timestamp']) - int(prev_iter_timestamp)) <= 5): # for mock test
+                        #if (i['alarm_status'] == "1") and ((i['timestamp'] - prev_iter_timestamp) <= timedelta(seconds=5)): # for actual use
+                            if slp_counter != 1:
+                                slp_counter += 1
+                            else:
+                                slp_counter = 2
+                        else:
+                            slp_counter = 1
+                    '''
+                    print(f'slp_counter: {slp_counter}')
 
-    # Case #2: If evt_type == alarm
-    elif evt_type == 'alarm':
-        # check whether this dev_id is already registered
-        dev_doc = dev_reg.find_one({'dev_id': dev_id})
-        if dev_doc is not None:
-            # get the data of the message
-            msg_data = json.loads(msg.payload)
-            # check the 'eye_status' of the last 3 doc of this dev_id
-            dev_evts_3 = dev_evts.find({'dev_id': dev_id}, {'_id': False}, {'eye_status': True})['dev_evts'][-3:]
-            sleep_counter = 0
-            for evt in dev_evts_3:
-                if evt['eye_status'] == 1:
-                    sleep_counter += 1
-            if sleep_counter == 3:
-                sleep = True # car driver's eyes have been closed for 3 seconds (--> {'alarm':1})
-                dev_log.update_one({'dev_id': dev_id}, {'$set':{'status':'alarm'}})
-            else:
-                sleep = False
+                    
+                    #if (slp_counter != 0) and (slp_counter % 60 == 0):
+                        # send LINE BOT Notification
+                        ## for mock test to save quota
+                    if (slp_counter == 60):
+                        if (alert_delay_counter % 60 == 0):
+                            driver_name = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['driver_name']
+                            driver_address = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['driver_address']
+                            driver_contact = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['driver_contact']
+                            driver_registered_at = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['driver_registered_at']
+                            car_model = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['car_model']
+                            car_created_at = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['car_created_at']
+                            print(f'dev_id: {dev_id} alarms continuously for greater than 1 min !\nContact Car Driver Immediately !!\nContact:\ncar_driver_id: {car_driver_id}\ndriver_name: {driver_name}\ndriver_address: {driver_address}\ndriver_contact: {driver_contact}\ndriver_registered_at: {driver_registered_at}\ncar_model: {car_model}\ncar_created_at: {car_created_at}')
+                        
+                        alert_delay_counter += 1
+                    
+                    
+                        ''' # for actual implementation
+                        with ApiClient(configuration) as api_client:
+                            line_bot_api = MessagingApi(api_client) # api_instance
+                            driver_name = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['driver_name']
+                            driver_address = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['driver_address']
+                            driver_contact = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['driver_contact']
+                            driver_registered_at = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['driver_registered_at']
+                            car_model = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['car_model']
+                            car_created_at = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['car_created_at']
+                            noti_text = TextMessage(text=f'dev_id: {dev_id} alarms continuously for greater than 1 min !\nContact Car Driver Immediately !!\nContact:\ncar_driver_id: {car_driver_id}\ndriver_name: {driver_name}\ndriver_address: {driver_address}\ndriver_contact: {driver_contact}\ndriver_registered_at: {driver_registered_at}\ncar_model: {car_model}\ncar_created_at: {car_created_at}')
+                            #x_line_retry_key = 'x_line_retry_key_example' # make it yourself
 
-            ## 2.1 (If {'eyes':0} for 3 consecutive timestamps) OR (If {'alarm':1})
-            if (sleep == True) or (dev_alarm == 1):
-                # insert this data into device_event database
-                dev_evts.insert_one({
-                    'dev_id': dev_id,
-                    'car_driver_id': car_driver_id,
-                    'eye_status': msg_data['eyes'],
+                            push_message_request = PushMessageRequest(
+                                to=user_1_id,
+                                messages=[noti_text]
+                            )
+                            try:
+                                api_response = line_bot_api.push_message(push_message_request)
+                                print("The response of MessagingApi->push_message:\n")
+                                pprint(api_response)
+                                alert_delay_counter += 1
+                                #just_alert = True
+                            except Exception as e:
+                                print("Exception when calling MessagingApi->push_message: %s\n" % e)
+                        '''
+                    else:
+                        alert_delay_counter = 0
 
-                })
-    '''
+                    print(f'alert_delay_counter: {alert_delay_counter}')    
+                    prev_iter_timestamp = 0
+                    print('==============')
 
 
-    
 # start instance
 mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 mqtt_client.enable_logger()
