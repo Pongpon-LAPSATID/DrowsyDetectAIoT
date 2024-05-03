@@ -15,15 +15,12 @@
 - Acceptance Criteria#2: If I do not close my eyes for 3 seconds continuously, the buzzer must not alarm.<br>
 - Acceptance Criteria#3: I can turn the buzzer alarm sound OFF after the alarm rings.<br>
 
-**US2: As a car driver, I want to check the status of the system, so that I can know whether I can use the system or not.** <br>
-- Acceptance Criteria#1: I can check the status of the system (online/activated/alarm/offline)<br>
 
-**US3: As a car owner, I want to get a notification when the buzzer continuously alarms for more than 1 minute, so that I can contact the car driver to ensure their safety.**
+**US2: As a car owner, I want to get a notification when the buzzer continuously alarms for more than 1 minute, so that I can contact the car driver to ensure their safety.**
 - Acceptance Criteria#1: I can get the notification (Line notification) when the buzzer continuously alarms for more than 1 minute.<br>
 
 
-
-**US4: As a car owner, I want to monitor the status of the system, so that I know whether the system is ready to function or not.** <br>
+**US3: As a car owner, I want to monitor the status of the system, so that I know whether the system is ready to function or not.** <br>
 - Acceptance Criteria#1: I can check the status of the system (online/activated/alarm/offline)<br>
 
 ## Software Models<br>
