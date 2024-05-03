@@ -25,7 +25,7 @@
 
 ## Software Models<br>
 ### State Diagram <br>
-![ICT720  Group 1_State Diagram](https://github.com/pitijit/Ict720-software-2024/assets/92443678/592f0820-8a42-46fe-b32d-652514e5563f)
+![statediagram](https://github.com/pitijit/Ict720_software_2024/assets/104715281/03771757-e6a4-422e-9987-ee1de3e6392f)
 ### Sequence Diagram <br>
 ![ICT720  Group 1_Sequence Diagram_rev1 by Pongpon](https://github.com/pitijit/Ict720-software-2024/assets/92443678/2154b755-84cd-4470-9737-9b2daa839e33)
 ## Overview <br>
