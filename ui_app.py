@@ -44,13 +44,13 @@ else:
 
 st.markdown("---")  # create space between components
 
-# create for car
+# create for device
 st.sidebar.header("Choose the filter: ")
-car = st.sidebar.multiselect("Pick Car", df["dev_id"].unique())
-if not car:  # if not select car
+device = st.sidebar.multiselect("Pick Device", df["dev_id"].unique())
+if not device:  # if not select device
     df2 = df.copy()
-else:  # choose specific car
-    df2 = df[df["dev_id"].isin(car)]
+else:  # choose specific device
+    df2 = df[df["dev_id"].isin(device)]
 
 # create for driver
 driver = st.sidebar.multiselect("Pick Driver", df["car_driver_id"].unique())
