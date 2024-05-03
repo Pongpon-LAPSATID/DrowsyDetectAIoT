@@ -6,7 +6,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # headline
-st.set_page_config(page_title="Superstore!!!",
+st.set_page_config(page_title="Car Rental Dashboard",
                    page_icon=":clipboard:", layout="wide")
 
 st.title(" :clipboard: Car Rental Dashboard")
