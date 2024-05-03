@@ -15,20 +15,17 @@
 - Acceptance Criteria#2: If I do not close my eyes for 3 seconds continuously, the buzzer must not alarm.<br>
 - Acceptance Criteria#3: I can turn the buzzer alarm sound OFF after the alarm rings.<br>
 
-**US2: As a car driver, I want to check the status of the system, so that I can know whether I can use the system or not.** <br>
-- Acceptance Criteria#1: I can check the status of the system (online/activated/alarm/offline)<br>
 
-**US3: As a car owner, I want to get a notification when the buzzer continuously alarms for more than 1 minute, so that I can contact the car driver to ensure their safety.**
+**US2: As a car owner, I want to get a notification when the buzzer continuously alarms for more than 1 minute, so that I can contact the car driver to ensure their safety.**
 - Acceptance Criteria#1: I can get the notification (Line notification) when the buzzer continuously alarms for more than 1 minute.<br>
 
 
-
-**US4: As a car owner, I want to monitor the status of the system, so that I know whether the system is ready to function or not.** <br>
+**US3: As a car owner, I want to monitor the status of the system, so that I know whether the system is ready to function or not.** <br>
 - Acceptance Criteria#1: I can check the status of the system (online/activated/alarm/offline)<br>
 
 ## Software Models<br>
 ### State Diagram <br>
-![ICT720  Group 1_State Diagram](https://github.com/pitijit/Ict720-software-2024/assets/92443678/592f0820-8a42-46fe-b32d-652514e5563f)
+![statediagram](https://github.com/pitijit/Ict720_software_2024/assets/104715281/03771757-e6a4-422e-9987-ee1de3e6392f)
 ### Sequence Diagram <br>
 ![ICT720  Group 1_Sequence Diagram_rev1 by Pongpon](https://github.com/pitijit/Ict720-software-2024/assets/92443678/2154b755-84cd-4470-9737-9b2daa839e33)
 ## Overview <br>
@@ -36,7 +33,9 @@
 ## Connectivity <br>
 ![ICT720  Group 1_Connectivity Diagram](https://github.com/pitijit/Ict720-software-2024/assets/92443678/27538e0c-dd15-4fc7-bdf8-0204a16a1600)
 ## Data Modeling<br>
-![ICT720  Group 1_class diagram_20240502](https://github.com/pitijit/Ict720_software_2024/assets/92443678/02c58c1d-aaa3-4ec7-9a76-b0bc24b25461)
+![ICT720  Group 1_class diagram](https://github.com/pitijit/Ict720_software_2024/assets/104715281/2d63141f-a11c-432d-845f-35574a492a72)
+
+
 
 
 
