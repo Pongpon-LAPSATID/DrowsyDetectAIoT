@@ -53,6 +53,14 @@ services:
       - .env
     depends_on:
       - user_api
+  heartbeat_checker:
+    build: ./heartbeat_checker
+    env_file:
+      - .env
+    depends_on:
+      - mongo
+      - dev_api
+      - mqtt_con
   mongo:
     image: mongo
     restart: always

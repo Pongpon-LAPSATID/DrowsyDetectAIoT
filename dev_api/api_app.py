@@ -1,7 +1,7 @@
 import os
 import sys
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from pytz import timezone
 import json
 
@@ -59,7 +59,12 @@ async def on_devreg(dev_id: str, request: Request):
     dev_log = dev_db.device_log
     new_devlog = {
         'dev_id': dev_id,
-        'status': 'offline'
+        'status': 'offline',
+        'latest_hb': 0,
+        #'prev_iter_timestamp': timedelta(seconds=0), # for actual use; for backend, not users
+        'prev_iter_timestamp': 0, # for mock test only
+        'slp_counter': 0, # sleep counter; for LINE Bot alert backend
+        'alert_delay_counter': 0 # for LINE Bot alert backend
     }
     dev_id_log = dev_log.insert_one(new_devlog).inserted_id
     resp['log'] = str(dev_id_log)
@@ -99,7 +104,12 @@ async def on_devregister(request: Request):
     dev_log = dev_db.device_log
     new_devlog = {
         'dev_id': data['dev_id'],
-        'status': 'offline'
+        'status': 'offline',
+        'latest_hb': 0, # most recent heartbeat
+        #'prev_iter_timestamp': timedelta(seconds=0), # for actual use || for backend, not users
+        'prev_iter_timestamp': 0, # for mock test only || for backend, not users
+        'slp_counter': 0, # sleep counter; for LINE Bot alert backend
+        'alert_delay_counter': 0 # for LINE Bot alert backend
     }
     dev_id_log = dev_log.insert_one(new_devlog).inserted_id
     resp['log'] = str(dev_id_log)
