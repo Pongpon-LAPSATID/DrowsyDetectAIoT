@@ -1,7 +1,7 @@
 # Ict720-software-2024
 ## Our Members
 1. Miss Pitijit Charoenwuttikajorn (6622040266)
-2. Miss Onsasipat Kasamrach (6622040670)
+2. Miss Onsasipat Kasamrach (6622040670) (DESKTOP-AUL300V\Fern is the same person as OnsasipatKasamrach)
 3. Mr. Pongpon Lapsatid (6622040316)
           
 ## Domain: Drowsiness Detection in Car Rental Service
