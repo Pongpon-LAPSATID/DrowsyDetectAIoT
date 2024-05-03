@@ -87,6 +87,7 @@ async def hwmock_datagen(request: Request):
 @app.get('/api/dbexport/{db}')
 async def dbexport(db: str, request: Request):
     resp = {'status':'OK'}
+    timestamp = datetime.now(tz=tz)
     # call the database
     dev_db = mongo_client.dev_db
     car_db = mongo_client.car_db
