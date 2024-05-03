@@ -26,9 +26,27 @@ from linebot.v3.webhooks import (
     UnfollowEvent
 )
 
+import paho.mqtt.client as mqtt
+
 # logging configuration
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
+
+# mqtt config
+mqtt_broker = os.getenv('MQTT_BROKER', None)
+if mqtt_broker is None:
+    logging.error('MQTT_BROKER undefined.')
+    sys.exit(1)
+mqtt_port = os.getenv('MQTT_PORT', None)
+if mqtt_port is None:
+    logging.error('MQTT_PORT undefined.')
+    sys.exit(1)
+
+# MQTT data sources; for publishing CMD message
+MQTT_CMD_TOPIC = os.getenv('MQTT_CMD_TOPIC', None)
+if MQTT_CMD_TOPIC is None:
+    logging.error('MQTT_CMD_TOPIC undefined.')
+    sys.exit(1)
 
 # linebot configuration
 channel_secret = os.getenv('LINE_CHANNEL_SECRET', None)
@@ -104,14 +122,197 @@ def handle_message(event):
     user_id = event.source.user_id
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
-        if text.startswith('#reg-'):
-            print('Register with '+text.split('-')[1])
-            # register user and device
+        try:
+            if text.startswith('status'): # status dev_id or status all
+                target_dev = text.split()[1]
+                print(f'Admin requests to check status of dev_id: '+ {target_dev})
 
-        resp = TextMessage(text='hello')
+                if target_dev.lower() == 'all':
+                    # request /api/alldevlog
+                    data, statuscode = fetch_data_get(os.path.join(dev_api_url, 'api/alldevstatus'))
+                    
+                    if statuscode != 200:
+                        resp = TextMessage(text=f'{statuscode}: Internal system/API error')
+                        print(f'{statuscode} Error; Dev API Failed. Data failed to be posted to registration endpoint.')
+                        line_bot_api.reply_message(
+                            ReplyMessageRequest(
+                                reply_token=event.reply_token,
+                                messages=[resp]
+                            )
+                        )
+                        return None
+
+                    if data['log'] == []:
+                        print(f'No data exists in device_log database.')
+                        resp = TextMessage(text=f'No data exists in device_log database.')
+                        line_bot_api.reply_message(
+                            ReplyMessageRequest(
+                                reply_token=event.reply_token,
+                                messages=[resp]
+                            )
+                        )
+                        return None
+                    
+                    resp = TextMessage(f'Here is the status of each dev_id:\n{data}')
+                    print('/api/alldevstatus requested successfully')
+                    
+                else:
+                    # request /api/devlog/dev_id
+                    data, statuscode = fetch_data_get(os.path.join(dev_api_url, f'api/devstatus/{target_dev}'))
+                    
+                    if statuscode != 200:
+                        resp = TextMessage(text=f'{statuscode}: Internal system/API error')
+                        print(f'{statuscode} Error; Dev API Failed. Data failed to be posted to registration endpoint.')
+                        line_bot_api.reply_message(
+                            ReplyMessageRequest(
+                                reply_token=event.reply_token,
+                                messages=[resp]
+                            )
+                        )
+                        return None
+
+                    if data['log'] == []:
+                        print(f'{target_dev} does not exist in device_log database.')
+                        resp = TextMessage(text=f'{target_dev} does not exist in device_log database.')
+                        line_bot_api.reply_message(
+                            ReplyMessageRequest(
+                                reply_token=event.reply_token,
+                                messages=[resp]
+                            )
+                        )
+                        return None
+                    
+                    resp = TextMessage(f'Here is the status of {target_dev}:\n{data}')
+                    print('/api/devstatus requested successfully')
+                    
+            
+            elif text.startswith('activate'): # activate dev_id or activate all
+                target_dev = text.split()[1]
+                
+                if target_dev.lower() == "all":
+                    # request /api/alldevlog
+                    data, statuscode = fetch_data_get(os.path.join(dev_api_url, 'api/alldevlog'))
+                    
+                    if statuscode != 200:
+                        resp = TextMessage(text=f'{statuscode}: Internal system/API error')
+                        print(f'{statuscode} Error; Dev API Failed. Data failed to be posted to registration endpoint.')
+                        line_bot_api.reply_message(
+                            ReplyMessageRequest(
+                                reply_token=event.reply_token,
+                                messages=[resp]
+                            )
+                        )
+                        return None
+
+                    if data['log'] == []:
+                        print(f'No data exists in device_log database.')
+                        resp = TextMessage(text=f'No data exists in device_log database.')
+                        line_bot_api.reply_message(
+                            ReplyMessageRequest(
+                                reply_token=event.reply_token,
+                                messages=[resp]
+                            )
+                        )
+                        return None
+                    
+                    # publish mqtt
+
+                    # LINE Bot reply message
+                    resp = TextMessage(f'All dev_ids are activated !')
+                    print('All dev_ids are activated !')
+                    
+                    
+                else:
+                    # request /api/log/dev_id
+                    data, statuscode = fetch_data_get(os.path.join(dev_api_url, f'api/log/{target_dev}'))
+                    
+                    if statuscode != 200:
+                        resp = TextMessage(text=f'{statuscode}: Internal system/API error')
+                        print(f'{statuscode} Error; Dev API Failed. Data failed to be posted to registration endpoint.')
+                        line_bot_api.reply_message(
+                            ReplyMessageRequest(
+                                reply_token=event.reply_token,
+                                messages=[resp]
+                            )
+                        )
+                        return None
+
+                    if data['log'] == []:
+                        print(f'{target_dev} does not exist in device_log database.')
+                        resp = TextMessage(text=f'{target_dev} does not exist in device_log database.')
+                        line_bot_api.reply_message(
+                            ReplyMessageRequest(
+                                reply_token=event.reply_token,
+                                messages=[resp]
+                            )
+                        )
+                        return None
+                    
+                    resp = TextMessage(f'Here is the status of {target_dev}:\n{data}')
+                    print('/api/devstatus requested successfully')
+                    
+                    for log in data['log']:
+                        if log['dev_id'] == target_dev:
+                            # publish mqtt {'CMD':'ON'}
+                            pass
+                    
+            else:
+                resp = TextMessage(text='instructions')
+
+        except Exception as e:
+            resp = TextMessage(text=f'Error; Exception: {e}')
+            print(f'Error; Exception: {e}')
+
+        # reply message via LINE Bot
         line_bot_api.reply_message(
             ReplyMessageRequest(
                 reply_token=event.reply_token,
                 messages=[resp]
             )
         )
+
+def make_request(url, data=None, headers={}):
+    #request = Request(url, headers=headers or {}, data=data)
+    request = urllib_Request(url, data=data, headers=headers)
+    try:
+        with urlopen(request, timeout=10) as response:
+            print(f'status_code: {response.status}') # print status code
+            return response.read(), response
+    except HTTPError as e:
+        print(f'HTTP Error: {e}')
+    except URLError as e:
+        print(f'URL Error: {e}')
+    except TimeoutError:
+        print('Request timed out')
+    except Exception as e:
+        print(f'Error occurred during HTTP Request: {e}')
+
+def fetch_data_get(url, headers={}):
+    body, response = make_request(url, headers=headers)
+    print(f'body: {body}')
+    print(f'response: {response}')
+    #dec_body = body.decode('utf-8')
+    #print(f'dec_body: {dec_body}')
+    #data = json.loads(dec_body)
+    data = json.loads(body)
+    print(f'data: {data}')
+
+    return data, response.getcode()
+
+def fetch_data_post(url:str, post_dict:dict, headers={}):
+    json_str = json.dumps(post_dict)
+    post_data = json_str.encode('utf-8')
+    body, response = make_request(
+        url,
+        data = post_data,
+        headers = headers
+    )
+    print(f'body: {body}')
+    print(f'response: {response}')
+    #dec_body = body.decode('utf-8')
+    #print(f'dec_body: {dec_body}')
+    #data = json.loads(dec_body)
+    data = json.loads(body)
+    print(f'data: {data}')
+
+    return data, response.getcode()

@@ -61,8 +61,8 @@ async def on_devreg(dev_id: str, request: Request):
         'dev_id': dev_id,
         'status': 'offline',
         'latest_hb': 0,
-        #'prev_iter_timestamp': timedelta(seconds=0), # for actual use; for backend, not users
-        'prev_iter_timestamp': 0, # for mock test only
+        'prev_iter_timestamp': 0, # for actual use; for backend, not users
+        #'prev_iter_timestamp': 0, # for mock test only
         'slp_counter': 0, # sleep counter; for LINE Bot alert backend
         'alert_delay_counter': 0 # for LINE Bot alert backend
     }
@@ -106,8 +106,8 @@ async def on_devregister(request: Request):
         'dev_id': data['dev_id'],
         'status': 'offline',
         'latest_hb': 0, # most recent heartbeat
-        #'prev_iter_timestamp': timedelta(seconds=0), # for actual use || for backend, not users
-        'prev_iter_timestamp': 0, # for mock test only || for backend, not users
+        'prev_iter_timestamp': 0, # for actual use || for backend, not users
+        #'prev_iter_timestamp': 0, # for mock test only || for backend, not users
         'slp_counter': 0, # sleep counter; for LINE Bot alert backend
         'alert_delay_counter': 0 # for LINE Bot alert backend
     }
@@ -183,7 +183,7 @@ async def on_devevts(dev_id: str, request: Request):
     resp['dev_evts'] = list(dev_evts.find({'dev_id': dev_id}, {'_id': False}))
     return jsonable_encoder(resp)
 
-@app.get('/api/devlog')
+@app.get('/api/alldevlog')
 async def on_devlog(request: Request):
     ''' See the current status of each registered device '''
     resp = {'status':'OK'}
@@ -191,3 +191,35 @@ async def on_devlog(request: Request):
     dev_log = dev_db.device_log
     resp['log'] = list(dev_log.find({}, {'_id': False}))
     return jsonable_encoder(resp)
+
+@app.get('/api/log/{dev_id}')
+async def on_log(dev_id: str, request: Request):
+    resp = {'status':'OK'}
+    # query and return all logs for a device
+    dev_db = mongo_client.dev_db
+    dev_evts = dev_db.device_events
+    resp['dev_id'] = dev_id
+    resp['log'] = list(dev_evts.find_one({'dev_id': dev_id}, {'_id': False}))
+    return jsonable_encoder(resp)
+
+@app.get('/api/alldevstatus')
+async def on_devlog(request: Request):
+    ''' See the current status of each registered device '''
+    resp = {'status':'OK'}
+    dev_db = mongo_client.dev_db
+    dev_log = dev_db.device_log
+    resp['log'] = list(dev_log.find({}, {'_id': False}, {'status': True}))
+    return jsonable_encoder(resp)
+
+@app.get('/api/devstatus/{dev_id}')
+async def on_log(dev_id: str, request: Request):
+    resp = {'status':'OK'}
+    # query and return all logs for a device
+    dev_db = mongo_client.dev_db
+    dev_evts = dev_db.device_events
+    resp['dev_id'] = dev_id
+    resp['log'] = list(dev_evts.find_one({'dev_id': dev_id}, {'_id': False}, {'status': True}))
+    return jsonable_encoder(resp)
+
+#@app.post('/api/cmdactivate')
+#async def 
