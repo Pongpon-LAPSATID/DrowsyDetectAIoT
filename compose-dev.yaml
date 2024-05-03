@@ -53,8 +53,8 @@ services:
       - .env
     depends_on:
       - user_api
-  heartbeat_checker:
-    build: ./heartbeat_checker
+  heartbeat_cmd_scheduler:
+    build: ./heartbeat_cmd_scheduler
     env_file:
       - .env
     depends_on:

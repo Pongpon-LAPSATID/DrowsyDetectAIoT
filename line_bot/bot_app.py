@@ -202,12 +202,12 @@ def handle_message(event):
                     
             
             elif text.startswith('activate'): # activate dev_id or activate all
-                target_dev = text.split()[1]
+                target_dev = text.split()[-1]
                 
                 if target_dev.lower() == "all":
                     print('case 2-1')
-                    # request /api/alldevlog
-                    data, statuscode = fetch_data_get(os.path.join(dev_api_url, 'api/alldevlog'))
+                    # request /api/activateall
+                    data, statuscode = fetch_data_get(os.path.join(dev_api_url, 'api/activateall'))
                     
                     if statuscode != 200:
                         resp = TextMessage(text=f'{statuscode}: Internal system/API error')
@@ -220,7 +220,7 @@ def handle_message(event):
                         )
                         return None
 
-                    if data['log'] == []:
+                    if data['CMD_updated'] == []:
                         print(f'No data exists in device_log database.')
                         resp = TextMessage(text=f'No data exists in device_log database.')
                         line_bot_api.reply_message(
@@ -230,18 +230,15 @@ def handle_message(event):
                             )
                         )
                         return None
-                    
-                    # publish mqtt
 
                     # LINE Bot reply message
                     resp = TextMessage(text=f'All dev_ids are activated !')
                     print('All dev_ids are activated !')
-                    
-                    
+                     
                 else:
                     print('case 2-2')
-                    # request /api/log/dev_id
-                    data, statuscode = fetch_data_get(os.path.join(dev_api_url, f'api/log/{target_dev}'))
+                    # request /api/activate/dev_id
+                    data, statuscode = fetch_data_get(os.path.join(dev_api_url, f'api/activate/{target_dev}'))
                     
                     if statuscode != 200:
                         resp = TextMessage(text=f'{statuscode}: Internal system/API error')
@@ -254,7 +251,7 @@ def handle_message(event):
                         )
                         return None
 
-                    if data['log'] == []:
+                    if data['CMD_updated'] == []:
                         print(f'{target_dev} does not exist in device_log database.')
                         resp = TextMessage(text=f'{target_dev} does not exist in device_log database.')
                         line_bot_api.reply_message(
@@ -265,16 +262,76 @@ def handle_message(event):
                         )
                         return None
                     
-                    resp = TextMessage(text=f'Here is the status of {target_dev}:\n{data}')
-                    print('/api/devstatus requested successfully')
+                    resp = TextMessage(text=f'dev_id: {target_dev} is activated.')
+                    print('API requested successfully')
                     
-                    for log in data['log']:
-                        if log['dev_id'] == target_dev:
-                            # publish mqtt {'CMD':'ON'}
-                            pass
+                    
+            elif text.startswith('deactivate'): # activate dev_id or activate all
+                target_dev = text.split()[-1]
+                
+                if target_dev.lower() == "all":
+                    print('case 3-1')
+                    # request /api/activateall
+                    data, statuscode = fetch_data_get(os.path.join(dev_api_url, 'api/deactivateall'))
+                    
+                    if statuscode != 200:
+                        resp = TextMessage(text=f'{statuscode}: Internal system/API error')
+                        print(f'{statuscode} Error; Dev API Failed. Data failed to be posted to registration endpoint.')
+                        line_bot_api.reply_message(
+                            ReplyMessageRequest(
+                                reply_token=event.reply_token,
+                                messages=[resp]
+                            )
+                        )
+                        return None
+
+                    if data['CMD_updated'] == []:
+                        print(f'No data exists in device_log database.')
+                        resp = TextMessage(text=f'No data exists in device_log database.')
+                        line_bot_api.reply_message(
+                            ReplyMessageRequest(
+                                reply_token=event.reply_token,
+                                messages=[resp]
+                            )
+                        )
+                        return None
+
+                    # LINE Bot reply message
+                    resp = TextMessage(text=f'All dev_ids are deactivated !')
+                    print('All dev_ids are deactivated !')
+                     
+                else:
+                    print('case 3-2')
+                    # request /api/deactivate/dev_id
+                    data, statuscode = fetch_data_get(os.path.join(dev_api_url, f'api/deactivate/{target_dev}'))
+                    
+                    if statuscode != 200:
+                        resp = TextMessage(text=f'{statuscode}: Internal system/API error')
+                        print(f'{statuscode} Error; Dev API Failed. Data failed to be posted to registration endpoint.')
+                        line_bot_api.reply_message(
+                            ReplyMessageRequest(
+                                reply_token=event.reply_token,
+                                messages=[resp]
+                            )
+                        )
+                        return None
+
+                    if data['CMD_updated'] == []:
+                        print(f'{target_dev} does not exist in device_log database.')
+                        resp = TextMessage(text=f'{target_dev} does not exist in device_log database.')
+                        line_bot_api.reply_message(
+                            ReplyMessageRequest(
+                                reply_token=event.reply_token,
+                                messages=[resp]
+                            )
+                        )
+                        return None
+                    
+                    resp = TextMessage(text=f'dev_id: {target_dev} is deactivated.')
+                    print('API requested successfully')
                     
             else:
-                resp = TextMessage(text='instructions')
+                resp = TextMessage(text="We apologize for inconvenience. The acceptable LINE message commands are:\n 1. status all, status dev_id\n2. activate all, activate dev_id\n3. deactivate all, deactivate dev_id\n\nOr, click Menu to add/edit database in admin's sites")
 
         except Exception as e:
             resp = TextMessage(text=f'Error; Exception: {e}')

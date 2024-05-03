@@ -14,4 +14,4 @@ RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 COPY . /code
 
 # run code
-CMD python -u hb_check.py
+CMD python -u hb_cmd_scheduler.py

@@ -61,6 +61,7 @@ async def on_devreg(dev_id: str, request: Request):
         'dev_id': dev_id,
         'status': 'offline',
         'latest_hb': 0,
+        'CMD': False,
         'prev_iter_timestamp': 0, # for actual use; for backend, not users
         #'prev_iter_timestamp': 0, # for mock test only
         'slp_counter': 0, # sleep counter; for LINE Bot alert backend
@@ -106,6 +107,7 @@ async def on_devregister(request: Request):
         'dev_id': data['dev_id'],
         'status': 'offline',
         'latest_hb': 0, # most recent heartbeat
+        'CMD': False,
         'prev_iter_timestamp': 0, # for actual use || for backend, not users
         #'prev_iter_timestamp': 0, # for mock test only || for backend, not users
         'slp_counter': 0, # sleep counter; for LINE Bot alert backend
@@ -221,5 +223,49 @@ async def on_log(dev_id: str, request: Request):
     resp['log'] = list(dev_log.find({'dev_id': dev_id}, {'_id': 0, 'dev_id': 1, 'status': 1}))
     return jsonable_encoder(resp)
 
-#@app.post('/api/cmdactivate')
-#async def 
+@app.get('/api/activate/{dev_id}')
+async def on_devactivate(dev_id: str, request: Request):
+    resp = {'status':'OK'}
+    dev_db = mongo_client.dev_db
+    dev_log = dev_db.device_log
+    dev_log.update_one({'dev_id': dev_id}, {'$set':{'CMD': True}})
+    resp['CMD_updated'] = list(dev_log.find({'dev_id': dev_id}, {'_id': 0, 'dev_id': 1, 'CMD': 1}))
+    return jsonable_encoder(resp)
+
+@app.get('/api/deactivate/{dev_id}')
+async def on_devactivate(dev_id: str, request: Request):
+    resp = {'status':'OK'}
+    dev_db = mongo_client.dev_db
+    dev_log = dev_db.device_log
+    dev_log.update_one({'dev_id': dev_id}, {'$set':{'CMD': False}})
+    resp['CMD_updated'] = list(dev_log.find({'dev_id': dev_id}, {'_id': 0, 'dev_id': 1, 'CMD': 1}))
+    return jsonable_encoder(resp)
+
+@app.get('/api/activateall')
+async def on_devactivate(request: Request):
+    resp = {'status':'OK'}
+    dev_db = mongo_client.dev_db
+    dev_log = dev_db.device_log
+    dev_logs = list(dev_log.find({}, {'dev_id': True}))
+    dev_id_list = [device['dev_id'] for device in dev_logs]
+
+    for dev_id in dev_id_list:
+        dev_log.update_one({'dev_id': dev_id}, {'$set':{'CMD': True}})
+        
+    resp['CMD_updated'] = list(dev_log.find({}, {'_id': 0, 'dev_id': 1, 'CMD': 1}))
+    return jsonable_encoder(resp)
+
+@app.get('/api/deactivateall')
+async def on_devactivate(request: Request):
+    resp = {'status':'OK'}
+    dev_db = mongo_client.dev_db
+    dev_log = dev_db.device_log
+    dev_logs = list(dev_log.find({}, {'dev_id': True}))
+    dev_id_list = [device['dev_id'] for device in dev_logs]
+
+    for dev_id in dev_id_list:
+        dev_log.update_one({'dev_id': dev_id}, {'$set':{'CMD': False}})
+        
+    resp['CMD_updated'] = list(dev_log.find({}, {'_id': 0, 'dev_id': 1, 'CMD': 1}))
+    return jsonable_encoder(resp)
+

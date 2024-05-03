@@ -51,7 +51,7 @@ if mqtt_port is None:
     logging.error('MQTT_PORT undefined.')
     sys.exit(1)
 
-# MQTT data sources
+# MQTT topics
 MQTT_CARID_LOG_TOPIC = os.getenv('MQTT_CARID_LOG_TOPIC', None)
 if MQTT_CARID_LOG_TOPIC is None:
     logging.error('MQTT_CARID_LOG_TOPIC undefined.')
@@ -85,6 +85,7 @@ if user_1_id is None:
 configuration = Configuration(
     access_token=channel_access_token
 )
+
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, reason_code, properties):
@@ -139,13 +140,12 @@ def on_message(client, userdata, msg):
     evt_type = msg.topic.split('/')[-2]
     print(f'evt_type: {evt_type}')
     
+    
     # for CMD mqtt topic
-    if evt_type == 'CMD':
-        dev_doc = dev_reg.find_one({'dev_id': dev_id}, {'_id': False})
-        if dev_doc is not None: # activate the registered dev_id
-            dev_log.update_one({'dev_id': dev_id}, {'$set':{'CMD': msg_data['CMD']}})
-            # {'CMD':"ON", "OFF"} from LINE Bot message -> MQTT.Publish
-
+    if (evt_type == 'command'):
+        print(f'MQTT Topic: command || Payload: {msg_data}')
+    
+    # subscribe status from hardware module + heartbeat detector backend module
     if evt_type == 'status':
         dev_doc = dev_reg.find_one({'dev_id': dev_id}, {'_id': False})
         if dev_doc is not None:
