@@ -28,6 +28,10 @@ from linebot.v3.webhooks import (
 
 import paho.mqtt.client as mqtt
 
+from urllib.error import HTTPError, URLError
+from urllib.request import urlopen
+from urllib.request import Request as urllib_Request
+
 # logging configuration
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
@@ -66,14 +70,19 @@ configuration = Configuration(
 )
 
 # API URL
-user_api_url = os.getenv('USER_API_URL', None)
+#user_api_url = os.getenv('USER_API_URL', None)
+#user_api_url = f"http://host.docker.internal:{os.getenv('USER_API_PORT', None)}"
+user_api_url = f"{os.getenv('USER_API_URL', None)}{os.getenv('USER_API_PORT', None)}"
 if user_api_url is None:
-    print('Specify USER_API_URL as environment variable.')
+    logging.error('Failed to retrieve USER_API_URL')
     sys.exit(1)
-dev_api_url = os.getenv('DEV_API_URL', None)
+
+#dev_api_url = f"http://host.docker.internal:{os.getenv('DEV_API_PORT', None)}"
+dev_api_url = f"{os.getenv('DEV_API_URL', None)}{os.getenv('DEV_API_PORT', None)}"
 if dev_api_url is None:
-    print('Specify DEV_API_URL as environment variable.')
+    logging.error('Failed to retrieve DEV_API_URL')
     sys.exit(1)
+
 
 # start instance
 app = FastAPI()
@@ -87,10 +96,10 @@ handler = WebhookHandler(channel_secret)
 async def handle_callback(request: Request):
     signature = request.headers['X-Line-Signature']
     # get request body as text
-    #body = await request.body() 
-    #body = body.decode()
-    body = request.get_data(as_text=True)
-    app.logger.info("Request body: " + body)
+    body = await request.body()
+    body = body.decode()
+    #body = request.get_data(as_text=True)
+    #app.logger.info("Request body: " + body)
     try:
         handler.handle(body, signature)
     except InvalidSignatureError:
@@ -122,15 +131,18 @@ def handle_message(event):
     user_id = event.source.user_id
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
+        print(f'text: {text}')
+        target_dev = text.split()[-1]
+        print(f'target_dev: {target_dev}')
         try:
             if text.startswith('status'): # status dev_id or status all
-                target_dev = text.split()[1]
-                print(f'Admin requests to check status of dev_id: '+ {target_dev})
+                print(f'Admin requests to check status of dev_id: {target_dev}')
 
                 if target_dev.lower() == 'all':
                     # request /api/alldevlog
+                    print('case 1-1')
                     data, statuscode = fetch_data_get(os.path.join(dev_api_url, 'api/alldevstatus'))
-                    
+                    print(f'statuscode: {statuscode}')
                     if statuscode != 200:
                         resp = TextMessage(text=f'{statuscode}: Internal system/API error')
                         print(f'{statuscode} Error; Dev API Failed. Data failed to be posted to registration endpoint.')
@@ -153,11 +165,13 @@ def handle_message(event):
                         )
                         return None
                     
-                    resp = TextMessage(f'Here is the status of each dev_id:\n{data}')
+                    print('checkpoint')
+                    resp = TextMessage(text=f'Here is the status of {target_dev}:\n{data["log"]}')
                     print('/api/alldevstatus requested successfully')
                     
                 else:
                     # request /api/devlog/dev_id
+                    print('case 1-2')
                     data, statuscode = fetch_data_get(os.path.join(dev_api_url, f'api/devstatus/{target_dev}'))
                     
                     if statuscode != 200:
@@ -182,7 +196,8 @@ def handle_message(event):
                         )
                         return None
                     
-                    resp = TextMessage(f'Here is the status of {target_dev}:\n{data}')
+                    print('checkpoint')
+                    resp = TextMessage(text=f'Here is the status of {target_dev}:\n{data["log"]}')
                     print('/api/devstatus requested successfully')
                     
             
@@ -190,6 +205,7 @@ def handle_message(event):
                 target_dev = text.split()[1]
                 
                 if target_dev.lower() == "all":
+                    print('case 2-1')
                     # request /api/alldevlog
                     data, statuscode = fetch_data_get(os.path.join(dev_api_url, 'api/alldevlog'))
                     
@@ -218,11 +234,12 @@ def handle_message(event):
                     # publish mqtt
 
                     # LINE Bot reply message
-                    resp = TextMessage(f'All dev_ids are activated !')
+                    resp = TextMessage(text=f'All dev_ids are activated !')
                     print('All dev_ids are activated !')
                     
                     
                 else:
+                    print('case 2-2')
                     # request /api/log/dev_id
                     data, statuscode = fetch_data_get(os.path.join(dev_api_url, f'api/log/{target_dev}'))
                     
@@ -248,7 +265,7 @@ def handle_message(event):
                         )
                         return None
                     
-                    resp = TextMessage(f'Here is the status of {target_dev}:\n{data}')
+                    resp = TextMessage(text=f'Here is the status of {target_dev}:\n{data}')
                     print('/api/devstatus requested successfully')
                     
                     for log in data['log']:
@@ -294,7 +311,7 @@ def fetch_data_get(url, headers={}):
     #dec_body = body.decode('utf-8')
     #print(f'dec_body: {dec_body}')
     #data = json.loads(dec_body)
-    data = json.loads(body)
+    data = json.loads(body, strict=False)
     print(f'data: {data}')
 
     return data, response.getcode()
@@ -312,7 +329,7 @@ def fetch_data_post(url:str, post_dict:dict, headers={}):
     #dec_body = body.decode('utf-8')
     #print(f'dec_body: {dec_body}')
     #data = json.loads(dec_body)
-    data = json.loads(body)
+    data = json.loads(body, strict=False)
     print(f'data: {data}')
 
     return data, response.getcode()

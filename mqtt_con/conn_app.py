@@ -133,7 +133,7 @@ def on_message(client, userdata, msg):
     # retrieve car_driver_id from dev_id
     
     # extract the mqtt payload received
-    msg_data = json.loads(msg.payload)
+    msg_data = json.loads(msg.payload, strict=False)
 
     # get the event type: log, alarm, or heartbeat
     evt_type = msg.topic.split('/')[-2]
@@ -144,6 +144,12 @@ def on_message(client, userdata, msg):
         dev_doc = dev_reg.find_one({'dev_id': dev_id}, {'_id': False})
         if dev_doc is not None: # activate the registered dev_id
             dev_log.update_one({'dev_id': dev_id}, {'$set':{'CMD': msg_data['CMD']}})
+            # {'CMD':"ON", "OFF"} from LINE Bot message -> MQTT.Publish
+
+    if evt_type == 'status':
+        dev_doc = dev_reg.find_one({'dev_id': dev_id}, {'_id': False})
+        if dev_doc is not None:
+            dev_log.update_one({'dev_id': dev_id}, {'$set':{'status': msg_data['status']}})
     
     # for heartbeat mqtt topic
     if evt_type == 'heartbeat':
@@ -153,7 +159,8 @@ def on_message(client, userdata, msg):
             dev_log.update_one({'dev_id': dev_id}, {'$set':{'latest_hb': msg_data['timestamp']}})
 
     # for dev_evts mqtt topics
-    if (evt_type == 'log') or (evt_type == 'alarm'): # subject to change later, depending on hardware implementation result
+    #if (evt_type == 'log') or (evt_type == 'alarm'): # subject to change later, depending on hardware implementation result
+    if (evt_type == 'log'):
         car_driver_id = dev_reg.find_one({'dev_id':dev_id}, {'_id': False})['car_driver_id']
         print(f'dev_id: {dev_id} || car_driver_id: {car_driver_id}')
         # check the dev_id, car_driver_id correctness
@@ -175,8 +182,10 @@ def on_message(client, userdata, msg):
                 })
                 
                 # send LINE Bot Alert if {'alarm':1} for 1 min continuously
-                if evt_type == 'alarm':
-                    dev_evts_last60 = list(dev_evts.find({'dev_id':dev_id}, {'_id': False}))[-60:]
+                #if evt_type == 'alarm':
+                if msg_data['alarm_status'] == "1":
+                    #dev_log.update_one({'dev_id': dev_id}, {'$set':{'status':'alarm'}})
+                    dev_evts_last60 = list(dev_evts.find({'dev_id':dev_id}, {'_id': False}))[-10:]
                     dev_evts_last60 = dev_evts_last60[-1::-1]
                     dev_evts_lastmin = []
                     prev_iter_timestamp = dev_log.find_one({'dev_id':dev_id}, {'prev_iter_timestamp':True})['prev_iter_timestamp']
@@ -185,14 +194,19 @@ def on_message(client, userdata, msg):
                     print('==============')
                     print(f'dev_id: {dev_id} is alarming !!')
                     print(f'prev_iter_timestamp: {prev_iter_timestamp}')
+
                     for i in dev_evts_last60:
                         # count sleep counter only if alarm = 1 (ON) and that timestamp is not far apart from its previous timestamp more than 5 sec
                         #if (i['alarm_status'] == "1") and ((int(prev_iter_timestamp) - int(i['timestamp'])) <= 5):
-                        if (i['alarm_status'] == "1") and (((prev_iter_timestamp - i['timestamp']) <= timedelta(seconds=5)) or (prev_iter_timestamp == 0)): # for actual use
+                        current_timestamp = datetime.strptime(i['timestamp'], "%Y-%m-%d %H:%M:%S.%f")
+                        if prev_iter_timestamp == 0:
+                            prev_iter_timestamp = current_timestamp + timedelta(seconds=1)
+                        #if (i['alarm_status'] == "1") and (((prev_iter_timestamp - current_timestamp) <= timedelta(seconds=5)) or (prev_iter_timestamp == 0)): # for actual use
+                        if (i['alarm_status'] == "1") and ((prev_iter_timestamp - current_timestamp) <= timedelta(seconds=5)):
                             dev_evts_lastmin.append(i)
                             # update prev_iter_timestamp variable
                             #prev_iter_timestamp = int(i['timestamp']) # for mock test
-                            prev_iter_timestamp = i['timestamp'] # for actual use
+                            prev_iter_timestamp = current_timestamp # for actual use
 
                             # update prev_iter_timestamp data in the dev_log database
                             dev_log.update_one({'dev_id': dev_id}, {'$set':{'prev_iter_timestamp':prev_iter_timestamp}})
@@ -207,8 +221,8 @@ def on_message(client, userdata, msg):
                     dev_log.update_one({'dev_id':dev_id}, {'$set':{'slp_counter':slp_counter}})
                     print(f'slp_counter: {slp_counter}')
 
-                    if (slp_counter == 60):
-                        if (alert_delay_counter % 60 == 0):
+                    if (slp_counter == 10):
+                        if (alert_delay_counter % 10 == 0):
                             driver_name = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['driver_name']
                             driver_address = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['driver_address']
                             driver_contact = car_driver_db.find_one({'car_driver_id':car_driver_id}, {'_id':False})['driver_contact']
@@ -257,6 +271,8 @@ def on_message(client, userdata, msg):
                     dev_log.update_one({'dev_id': dev_id}, {'$set':{'prev_iter_timestamp':prev_iter_timestamp}})
                     print('==============')
 
+                #elif msg_data['alarm_status'] == "0":
+                #    dev_log.update_one({'dev_id': dev_id}, {'$set':{'status':'activated'}})
 
 # start instance
 mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)

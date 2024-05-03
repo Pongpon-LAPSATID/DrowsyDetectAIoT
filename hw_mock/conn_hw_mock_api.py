@@ -22,7 +22,7 @@ tz = timezone(os.getenv('TZ', None))
 if tz is None:
     logging.error('TZ undefined.')
     sys.exit(1)
-timestamp = datetime.now(tz=tz)
+
 
 # logging configuration
 logging.basicConfig(level=logging.INFO,
@@ -57,6 +57,7 @@ async def hwmock_datagen(request: Request):
     resp = {'status':'OK'}
     # get data from POST request
     data = await request.json()
+    timestamp = datetime.now(tz=tz)
     data['timestamp'] = timestamp
     # input to device_event database
     ## check for abnormal case 2: missing info

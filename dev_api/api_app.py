@@ -208,7 +208,7 @@ async def on_devlog(request: Request):
     resp = {'status':'OK'}
     dev_db = mongo_client.dev_db
     dev_log = dev_db.device_log
-    resp['log'] = list(dev_log.find({}, {'_id': False}, {'status': True}))
+    resp['log'] = list(dev_log.find({}, {'_id': 0, 'dev_id': 1, 'status': 1}))
     return jsonable_encoder(resp)
 
 @app.get('/api/devstatus/{dev_id}')
@@ -216,9 +216,9 @@ async def on_log(dev_id: str, request: Request):
     resp = {'status':'OK'}
     # query and return all logs for a device
     dev_db = mongo_client.dev_db
-    dev_evts = dev_db.device_events
+    dev_log = dev_db.device_log
     resp['dev_id'] = dev_id
-    resp['log'] = list(dev_evts.find_one({'dev_id': dev_id}, {'_id': False}, {'status': True}))
+    resp['log'] = list(dev_log.find({'dev_id': dev_id}, {'_id': 0, 'dev_id': 1, 'status': 1}))
     return jsonable_encoder(resp)
 
 #@app.post('/api/cmdactivate')
