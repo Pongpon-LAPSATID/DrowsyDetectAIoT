@@ -44,8 +44,10 @@ else:
 
 st.markdown("---")  # create space between components
 
-# create for device
+# filter
 st.sidebar.header("Choose the filter: ")
+
+# create for device
 device = st.sidebar.multiselect("Pick Device", df["dev_id"].unique())
 if not device:  # if not select device
     df2 = df.copy()
