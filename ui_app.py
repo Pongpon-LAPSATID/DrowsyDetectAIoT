@@ -9,7 +9,7 @@ warnings.filterwarnings('ignore')
 st.set_page_config(page_title="Superstore!!!",
                    page_icon=":clipboard:", layout="wide")
 
-st.title(" :clipboard: Car Rental Database")
+st.title(" :clipboard: Car Rental Dashboard")
 st.markdown(
     '<style>div.block-container{padding-top:1rem;}</style>', unsafe_allow_html=True)
 
