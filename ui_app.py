@@ -21,7 +21,7 @@ if fl is not None:
     st.write(filename)
     df = pd.read_csv(filename, encoding="ISO-8859-1")
 else:
-    os.chdir(r"C:\Users\Fern\Desktop\Ict720_software_2024")
+    os.chdir(r"./")
     df = pd.read_csv("20240501075148_device_events.csv", encoding="ISO-8859-1")
 
 # show dataframe
@@ -62,7 +62,6 @@ else:  # choose specific driver
 filtered_df = df3
 col1, col2 = st.columns((2))
 
-
 # group by car_driver_id and eye_status
 category_df = filtered_df.groupby(
     ['car_driver_id', 'eye_status']).size().reset_index(name='eye_status_count')
@@ -70,8 +69,8 @@ eye_status_labels = {0: "Open", 1: "Close"}
 category_df['eye_status'] = category_df['eye_status'].map(eye_status_labels)
 pivot_df = category_df.pivot(
     index='car_driver_id', columns='eye_status', values='eye_status_count').fillna(0)
-plot_df = pivot_df.reset_index().melt(id_vars='car_driver_id', var_name='eye_status',
-                                      value_name='eye_status_count')  # convert pivot dataframe to long format for plotting
+plot_df = pivot_df.reset_index().melt(id_vars='car_driver_id',
+                                      var_name='eye_status', value_name='eye_status_count')
 
 # group by car_driver_id and alarm_status
 alarm_category_df = filtered_df.groupby(
@@ -81,11 +80,11 @@ alarm_category_df['alarm_status'] = alarm_category_df['alarm_status'].map(
     alarm_status_labels)
 alarm_pivot_df = alarm_category_df.pivot(
     index='car_driver_id', columns='alarm_status', values='alarm_count').fillna(0)
-alarm_plot_df = alarm_pivot_df.reset_index().melt(id_vars='car_driver_id', var_name='alarm_status',
-                                                  value_name='alarm_count')  # convert pivot dataframe to long format for plotting
+alarm_plot_df = alarm_pivot_df.reset_index().melt(
+    id_vars='car_driver_id', var_name='alarm_status', value_name='alarm_count')
 
+# bar chart for eye status
 with col1:
-    # bar chart for eye status
     if not plot_df.empty:
         # define color mapping
         eye_status_color_map = {'Open': '#1f77b4', 'Close': '#aec7e8'}
@@ -99,8 +98,8 @@ with col1:
         st.subheader(
             "No data to display for eye status count with selected filters.")
 
+# bar chart for alarm
 with col2:
-    # bar chart for alarm
     if not alarm_plot_df.empty:
         # define color mapping
         alarm_color_map = {'No Alarm': '#2ca02c', 'Alarm': '#d62728'}
