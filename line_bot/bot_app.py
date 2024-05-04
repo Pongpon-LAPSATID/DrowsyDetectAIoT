@@ -26,11 +26,28 @@ from linebot.v3.webhooks import (
     UnfollowEvent
 )
 
+from linebot.models.template import (
+    TemplateSendMessage,
+    CarouselTemplate,
+    CarouselColumn,
+)
+from linebot.models.actions import URIAction
+
+'''
+from linebot.v3.messaging.models.carousel_column import CarouselColumn
+from linebot.v3.messaging.models.carousel_template import CarouselTemplate
+from linebot.models import TemplateSendMessage
+from linebot.v3.messaging.models.uri_action import URIAction
+'''
+
 import paho.mqtt.client as mqtt
 
 from urllib.error import HTTPError, URLError
 from urllib.request import urlopen
 from urllib.request import Request as urllib_Request
+
+import webbrowser
+
 
 # logging configuration
 logging.basicConfig(level=logging.INFO,
@@ -107,24 +124,49 @@ async def handle_callback(request: Request):
     return 'OK'
 
 # code for web UI
-
-
-@app.get('/')
-async def liff_ui(request: Request):
+@app.get('/index')
+async def liff_finduserid_ui(request: Request):
     return templates.TemplateResponse(
-        request=request, name="FindUserID.html", context={"LIFF_ID": liff_id}
+        request=request, name="index.html", context={"LIFF_ID": liff_id}
     )
 
+# code to fetch dev_apis, user_apis from LIFF app
+@app.get('/devregister')
+async def liff_devregister(request: Request):
+    # call dev_api devregister
+    webbrowser.open(os.path.join(dev_api_url, 'devregister'), new=0, autoraise=True)
+    return 'devregister opened'
+
+@app.get('/devregedit')
+async def liff_devregedit(request: Request):
+    # call dev_api devregedit
+    webbrowser.open(os.path.join(dev_api_url, 'devregister'), new=0, autoraise=True)
+    return 'devregedit opened'
+
+@app.get('/cardriverreg')
+async def liff_devregedit(request: Request):
+    # call user_api cardriverreg
+    webbrowser.open(os.path.join(dev_api_url, 'cardriverreg'), new=0, autoraise=True)
+    return 'cardriverreg opened'
+
+@app.get('/cardriverregedit')
+async def liff_devregedit(request: Request):
+    # call user_api cardriverregedit
+    webbrowser.open(os.path.join(dev_api_url, 'cardriverregedit'), new=0, autoraise=True)
+    return 'cardriverregedit opened'
+
+@app.get('/carownerreg')
+async def liff_devregedit(request: Request):
+    # call user_api carownerreg
+    webbrowser.open(os.path.join(dev_api_url, 'carownerreg'), new=0, autoraise=True)
+    return 'carownerreg opened'
+
 # code to handle Follow event
-
-
 @handler.add(FollowEvent)
 def handle_follow_event(event):
     pass
 
 # code to handle text messages
-
-
 @handler.add(MessageEvent, message=TextMessageContent)
 def handle_message(event):
     text = event.message.text
@@ -329,9 +371,111 @@ def handle_message(event):
                     
                     resp = TextMessage(text=f'dev_id: {target_dev} is deactivated.')
                     print('API requested successfully')
-                    
+
             else:
-                resp = TextMessage(text="We apologize for inconvenience. The acceptable LINE message commands are:\n 1. status all, status dev_id\n2. activate all, activate dev_id\n3. deactivate all, deactivate dev_id\n\nOr, click Menu to add/edit database in admin's sites")
+                resp = TextMessage(text="We apologize for inconvenience. The acceptable LINE message commands are:\n 1. status all, status dev_id\n2. activate all, activate dev_id\n3. deactivate all, deactivate dev_id\n\nOr, access to admin sites via PC inside Cloud network to add/edit data in the database.")
+
+            '''  
+            elif text.startswith('menu') or text.startswith('Menu'):
+                
+                # send carousels containing URLs to Admin site Web UIs
+                carousel_template = {
+                    "type": "template",
+                    "altText": "this is a carousel template",
+                    "template": {
+                        "type": "carousel",
+                        "columns": [
+                            {
+                                "thumbnailImageUrl": "https://example.com/bot/images/item1.jpg",
+                                "imageBackgroundColor": "#FFFFFF",
+                                "title": "Register New Device",
+                                "text": "Input the related info (your admin_id, auth is required)",
+                                "actions": [
+                                    {
+                                        "type": "uri",
+                                        "label": "devregister",
+                                        "uri": os.path.join(dev_api_url, 'devregister')
+                                    }
+                                ]
+                            },
+                            
+                            {
+                                "thumbnailImageUrl": "https://example.com/bot/images/item1.jpg",
+                                "imageBackgroundColor": "#FFFFFF",
+                                "title": "Edit the Registered Device's Info",
+                                "text": "Input the related info (valid dev_id, your admin_id, auth required)",
+                                "actions": [
+                                    {
+                                        "type": "uri",
+                                        "label": "devregedit",
+                                        "uri": os.path.join(dev_api_url, 'devregedit')
+                                    }
+                                ]
+                            },
+                            {
+                                "thumbnailImageUrl": "https://example.com/bot/images/item1.jpg",
+                                "imageBackgroundColor": "#FFFFFF",
+                                "title": "Register New Device",
+                                "text": "Input the related info (your admin_id, auth is required)",
+                                "actions": [
+                                    {
+                                        "type": "uri",
+                                        "label": "cardriverreg",
+                                        "uri": os.path.join(user_api_url, 'cardriverreg')
+                                    }
+                                ]
+                            },
+                            {
+                                "thumbnailImageUrl": "https://example.com/bot/images/item1.jpg",
+                                "imageBackgroundColor": "#FFFFFF",
+                                "title": "Register New Device",
+                                "text": "Input the related info (your admin_id, auth is required)",
+                                "actions": [
+                                    {
+                                        "type": "uri",
+                                        "label": "cardriverregedit",
+                                        "uri": os.path.join(user_api_url, 'cardriverregedit')
+                                    }
+                                ]
+                            },
+                            {
+                                "thumbnailImageUrl": "https://example.com/bot/images/item1.jpg",
+                                "imageBackgroundColor": "#FFFFFF",
+                                "title": "Register New Device",
+                                "text": "Input the related info (your admin_id, auth is required)",
+                                "defaultAction": {
+                                "type": "uri",
+                                "label": "carownerreg",
+                                "uri": os.path.join(user_api_url, 'carownerreg')
+                                },
+                                "actions": [
+                                    {
+                                        "type": "uri",
+                                        "label": "carownerreg",
+                                        "uri": os.path.join(user_api_url, 'carownerreg')
+                                    }
+                                ]
+                            },
+                            
+                        ],
+                        "imageAspectRatio": "rectangle",
+                        "imageSize": "cover"
+                        
+                    }
+                }
+                
+                print('carousel_message prepared !')
+
+                line_bot_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[carousel_template]
+                    )
+                )
+                
+                print(f'carousel_template sent')
+                return None
+            '''
 
         except Exception as e:
             resp = TextMessage(text=f'Error; Exception: {e}')

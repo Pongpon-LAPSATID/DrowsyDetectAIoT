@@ -8,23 +8,42 @@
     <link rel="stylesheet" href="https://unpkg.com/onsenui/css/onsen-css-components.min.css">
     <script src="https://unpkg.com/onsenui/js/onsenui.min.js"></script>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <title>Registration</title>
+    <title>Car_Owner (Admin) Site</title>
 </head>
 <body>
     <ons-page id="main_page">
         <ons-toolbar>
-            <div class="center">Device register</div>
+            <div class="center">Admin Site Homepage</div>
         </ons-toolbar>
         <p>
-            <h3>Welcome</h3>
+            <h1>Please Click the Button to Navigate to the Chosen Site</h1>
         </p>
         <p>
-            <ons-input id="user_name" modifier="underbar" placeholder="User name" float></ons-input>
+            <h2>Device Databases</h2>
+            <p>
+                <h3>Register (Add) New Device</h3>
+                <ons-button id="devregister">Tap/Click to Register New Device</ons-input>
+            </p>
+            <p>
+                <h3>Edit Registered Device's Information</h3>
+                <ons-button id="devregedit">Tap/Click to Edit Registered Device's Info</ons-button>
+            </p>
         </p>
         <p>
-            <ons-input id="dev_id" modifier="underbar" placeholder="Device ID" float></ons-input>
+            <h2>Car Driver Database</h2>
+            <p>
+                <h3>Register New Car Driver</h3>
+                <ons-button id="cardriverreg">Tap/Click to Register New Car Driver</ons-button>
+            </p>
+            <p>
+                <h3>Edit Car Driver's Information</h3>
+                <ons-button id="cardriverregedit">Tap/Click to Edit Car Driver's Info</ons-button>
+            </p>
         </p>
-        <ons-button id="cmd_btn">Scan QR</ons-button>
+        <p>
+            <h2>Register New Admin (Car_Owner)</h2>
+            <ons-button id="carownerreg">Tap/Click to Register New Admin (Car_Onwer)</ons-button>
+        </p>
     </ons-page>
     <script>
         const liff_id = '{{LIFF_ID}}';
@@ -32,29 +51,81 @@
             liffId: liff_id, 
             withLoginOnExternalBrowser: true, // Enable automatic login process
         }).then(() => {
-            liff.getProfile().then((profile) => {
-                const user_name = profile.displayName;
-                document.getElementById('user_name').value = user_name;
-            }).catch((err) => {
-                console.log(err.code, err.message);
-            });
-            document.getElementById('cmd_btn').onclick = function() {
-                liff.scanCodeV2().then((result) => {
-                    const dev_id = result.value;
-                    document.getElementById('dev_id').value = dev_id;
-                    // const user_id = liff.getContext().user_id;
-                    liff.sendMessages([{
-                        type: 'text',
-                        text: '#reg-' + dev_id
-                    }]).then(() => {
-                        liff.closeWindow();
-                    }).catch((err) => {
-                        console.log(err.code, err.message);
-                    });
-                }).catch((err) => {
-                    console.log(err.code, err.message);
+            // call api for devregister button
+            document.getElementById('devregister').addEventListener('click', function() {
+                fetch('/devregister').then(function(response) {
+                    if(response.status==200){
+                        console.log('devregister ui ok');
+                    }else{
+                        alert(response.status + ': Failed to connect to admin site');
+                        console.log('devregister ui failed');
+                    }
+                }).then(function(data) {
+                    console.log(data);
+                }).catch(function(error) {
+                    console.log(error);
                 });
-            };
+            });
+            // call api for devregedit button
+            document.getElementById('devregedit').addEventListener('click', function() {
+                fetch('/devregedit').then(function(response) {
+                    if(response.status==200){
+                        console.log('devregedit ui ok');
+                    }else{
+                        alert(response.status + ': Failed to connect to admin site');
+                        console.log('devregedit ui failed');
+                    }
+                }).then(function(data) {
+                    console.log(data);
+                }).catch(function(error) {
+                    console.log(error);
+                });
+            });
+            // call api for cardriverreg button
+            document.getElementById('cardriverreg').addEventListener('click', function() {
+                fetch('/cardriverreg').then(function(response) {
+                    if(response.status==200){
+                        console.log('cardriverreg ui ok');
+                    }else{
+                        alert(response.status + ': Failed to connect to admin site');
+                        console.log('cardriverreg ui failed');
+                    }
+                }).then(function(data) {
+                    console.log(data);
+                }).catch(function(error) {
+                    console.log(error);
+                });
+            });
+            // call api for cardriverregedit button
+            document.getElementById('cardriverregedit').addEventListener('click', function() {
+                fetch('/cardriverregedit').then(function(response) {
+                    if(response.status==200){
+                        console.log('cardriverregedit ui ok');
+                    }else{
+                        alert(response.status + ': Failed to connect to admin site');
+                        console.log('cardriverregedit ui failed');
+                    }
+                }).then(function(data) {
+                    console.log(data);
+                }).catch(function(error) {
+                    console.log(error);
+                });
+            });
+            // call api for carownerreg button
+            document.getElementById('carownerreg').addEventListener('click', function() {
+                fetch('/carownerreg').then(function(response) {
+                    if(response.status==200){
+                        console.log('carownerreg ui ok');
+                    }else{
+                        alert(response.status + ': Failed to connect to admin site');
+                        console.log('carownerreg ui failed');
+                    }
+                }).then(function(data) {
+                    console.log(data);
+                }).catch(function(error) {
+                    console.log(error);
+                });
+            });
         }).catch((err) => {
             console.log(err.code, err.message);
         });
