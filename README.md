@@ -29,7 +29,7 @@
 ### Sequence Diagram <br>
 ![ICT720  Group 1_Sequence Diagram_rev1 by Pongpon](https://github.com/pitijit/Ict720-software-2024/assets/92443678/2154b755-84cd-4470-9737-9b2daa839e33)
 ## Overview <br>
-![Overview](https://github.com/pitijit/Ict720_software_2024/assets/104715281/47f73027-faa9-47f9-acb7-53756f07c68c)
+![Overview](https://github.com/pitijit/Ict720_software_2024/assets/104715281/96d2d1dc-d7de-40c4-8c9a-7cbc7e86b134)
 ## Connectivity <br>
 ![data connectivity](https://github.com/pitijit/Ict720_software_2024/assets/85090124/73316161-bff8-4ae8-a6ed-bc41aa84124b)
 ## Data Modeling<br>
