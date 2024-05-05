@@ -7,12 +7,17 @@
 </head>
 <body>
     <h1>Car Driver Registration Edit</h1>
+    <h2>Edit the Registered Car Driver's Information</h2>
     <input type="text" id="car_driver_id" placeholder="Enter car_driver_id"><br><br>
     <input type="text" id="driver_name" placeholder="Enter Driver's Full Name"><br><br>
     <input type="text" id="driver_address" placeholder="Enter Driver's Phone Number"><br><br>
     <input type="text" id="driver_contact" placeholder="Enter Driver's Email"><br><br>
     <input type="text" id="car_model" placeholder="Enter Car Model"><br><br>
     <input type="text" id="car_created_at" placeholder="Enter Car's Manufacture Date (YYYYMMDD)"><br><br>
+    <br><br>
+    <h2>Admin Authorization</h2>
+    <input type="text" id="admin_id" placeholder="Enter a valid admin_id"><br><br>
+    <input type="text" id="auth" placeholder="Enter auth of the admin_id"><br><br>
     <input type="submit" id="submit" value="Submit">
     <script>
         document.getElementById('submit').addEventListener('click', function() {
@@ -23,6 +28,8 @@
             var driver_registered_at = "_";
             var car_model = document.getElementById('car_model').value;
             var car_created_at = document.getElementById('car_created_at').value;
+            var admin_id = document.getElementById('admin_id').value;
+            var auth = document.getElementById('auth').value;
             fetch('/api/cardriverregedit', {
                 method: 'POST',
                 headers: {
@@ -35,7 +42,9 @@
                     driver_contact: driver_contact,
                     driver_registered_at: driver_registered_at,
                     car_model: car_model,
-                    car_created_at: car_created_at
+                    car_created_at: car_created_at,
+                    admin_id: admin_id,
+                    auth: auth
                 })
             }).then(function(response) {
                 if(response.status==200){

@@ -18,7 +18,7 @@ tz = timezone(os.getenv('TZ', None))
 if tz is None:
     logging.error('TZ undefined.')
     sys.exit(1)
-timestamp = datetime.now(tz=tz)
+
 
 # logging configuration
 logging.basicConfig(level=logging.INFO,
@@ -43,9 +43,10 @@ templates = Jinja2Templates(directory="templates")
 @app.get('/api/devreg/{dev_id}')
 async def on_devreg(dev_id: str, request: Request):
     resp = {'status': 'OK'}
-    #
+    # call database
     dev_db = mongo_client.dev_db
     # register new dev_id
+    timestamp = datetime.now(tz=tz)
     dev_reg = dev_db.device
     new_dev = {
         'dev_id': dev_id,
@@ -80,14 +81,17 @@ async def on_devregister(request: Request):
 @app.post('/api/devregister')
 async def on_devregister(request: Request):
     resp = {'status': 'OK'}
-    #
+    # call databases
+    timestamp = datetime.now(tz=tz)
     dev_db = mongo_client.dev_db
-    # register new dev_id
     dev_reg = dev_db.device
+    car_db = mongo_client.car_db
+    car_owner_db = car_db.car_owner
     data = await request.json()
     dev_doc = dev_reg.find_one({'dev_id': data['dev_id']}, {'_id': False})
     if dev_doc is not None:
         resp['error_message'] = f'409: duplicated dev_id is not acceptable'
+        print(f'409: duplicated dev_id is not acceptable')
         raise HTTPException(status_code=409, detail="Duplicated dev_id is not acceptable")
         #return jsonable_encoder(resp)
 
@@ -96,26 +100,52 @@ async def on_devregister(request: Request):
         value = data[key]
         if value == "":
             resp['error_message'] = f'400: missing required info; {data[key]} is required'
+            print(f'400: missing required info; {data[key]} is required')
             raise HTTPException(status_code=400, detail=f'missing required info; {data[key]} is required')
             #return jsonable_encoder(resp)
-    data['registered_at'] = timestamp
-    dev_objid = dev_reg.insert_one(data).inserted_id
-    resp['dev_id'] = str(dev_objid)
-    # register new dev_log for the new dev_id
-    dev_log = dev_db.device_log
-    new_devlog = {
-        'dev_id': data['dev_id'],
-        'status': 'offline',
-        'latest_hb': 0, # most recent heartbeat
-        'CMD': False,
-        'prev_iter_timestamp': 0, # for actual use || for backend, not users
-        #'prev_iter_timestamp': 0, # for mock test only || for backend, not users
-        'slp_counter': 0, # sleep counter; for LINE Bot alert backend
-        'alert_delay_counter': 0 # for LINE Bot alert backend
-    }
-    dev_id_log = dev_log.insert_one(new_devlog).inserted_id
-    resp['log'] = str(dev_id_log)
-    return jsonable_encoder(resp)
+
+    # check for abnormal case 3: invalid admin_id, auth
+    admins = list(car_owner_db.find({}, {'admin_id': True}))
+    admin_id_list = [admin['admin_id'] for admin in admins]
+
+    # invalid admin_id, auth inputted are not allowed
+    if data['admin_id'] in admin_id_list:
+        auth = data['auth']
+        valid_auth = car_owner_db.find_one({'admin_id': data['admin_id']}, {'_id': 0, 'auth': 1})['auth']
+        
+        if auth == str(valid_auth):
+            print(f'admin: {data["admin_id"]} authorized new device register.')
+            data['registered_at'] = timestamp
+            # store only dev_reg data
+            keys = ['dev_id', 'car_driver_id', 'created_at', 'registered_at']
+            new_devreg = {k: v for k, v in data.items() if k in keys}
+            # register new device to dev_reg database
+            dev_objid = dev_reg.insert_one(new_devreg).inserted_id
+            resp['dev_id'] = str(dev_objid)
+            # register new dev_log for the new device
+            dev_log = dev_db.device_log
+            new_devlog = {
+                'dev_id': data['dev_id'],
+                'status': 'offline',
+                'latest_hb': 0, # most recent heartbeat
+                'CMD': False,
+                'prev_iter_timestamp': 0, # for actual use || for backend, not users
+                #'prev_iter_timestamp': 0, # for mock test only || for backend, not users
+                'slp_counter': 0, # sleep counter; for LINE Bot alert backend
+                'alert_delay_counter': 0 # for LINE Bot alert backend
+            }
+            dev_id_log = dev_log.insert_one(new_devlog).inserted_id
+            resp['log'] = str(dev_id_log)
+            return jsonable_encoder(resp)
+        
+        else:
+            resp['error_message'] = "Invalid admin_id or auth"
+            print("Invalid admin_id or auth")
+            raise HTTPException(status_code=400, detail="Invalid admin_id or auth. Authorization Failed.")
+    else:
+        resp['error_message'] = "Invalid admin_id or auth"
+        print("Invalid admin_id or auth")
+        raise HTTPException(status_code=400, detail="Invalid admin_id or auth. Authorization Failed.")
 
 
 @app.get('/devregedit')
@@ -128,9 +158,11 @@ async def on_devregedit(request: Request):
 async def on_devregedit(request: Request):
     resp = {'status': 'OK'}
     # call the database
+    timestamp = datetime.now(tz=tz)
     dev_db = mongo_client.dev_db
-    # register new dev_id
     dev_reg = dev_db.device
+    car_db = mongo_client.car_db
+    car_owner_db = car_db.car_owner
     data = await request.json()
     dev_doc = dev_reg.find_one({'dev_id': data['dev_id']}, {'_id': False})
     # check #1: allow to edit only registered devices' data
@@ -143,13 +175,36 @@ async def on_devregedit(request: Request):
         if value == "":
             resp['error_message'] = f'400: missing required info; {data[key]} is required.'
             raise HTTPException(status_code=400, detail=f'400: missing required info; {data[key]} is required.')
-    
-    dev_reg.update_one({'dev_id': data['dev_id']}, {'$set':{'car_driver_id':data['car_driver_id']}})
-    dev_reg.update_one({'dev_id': data['dev_id']}, {'$set':{'created_at':data['created_at']}})
-    dev_reg.update_one({'dev_id': data['dev_id']}, {'$set':{'registered_at':timestamp}})
-    
-    resp['edited_dev'] = str(dev_reg.find_one({'dev_id': data['dev_id']}, {'_id': False}))
-    return jsonable_encoder(resp)
+        
+    # check for abnormal case 3: invalid admin_id, auth
+    admins = list(car_owner_db.find({}, {'admin_id': True}))
+    admin_id_list = [admin['admin_id'] for admin in admins]
+
+    # invalid admin_id, auth inputted are not allowed
+    if data['admin_id'] in admin_id_list:
+        auth = data['auth']
+        valid_auth = car_owner_db.find_one({'admin_id': data['admin_id']}, {'_id': 0, 'auth': 1})['auth']
+        
+        if auth == str(valid_auth):
+            print(f'admin: {data["admin_id"]} authorized new device register.')
+            data['registered_at'] = timestamp
+            # update data
+            dev_reg.update_one({'dev_id': data['dev_id']}, {'$set':{'car_driver_id':data['car_driver_id']}})
+            dev_reg.update_one({'dev_id': data['dev_id']}, {'$set':{'created_at':data['created_at']}})
+            dev_reg.update_one({'dev_id': data['dev_id']}, {'$set':{'registered_at':timestamp}})
+            
+            resp['edited_dev'] = str(dev_reg.find_one({'dev_id': data['dev_id']}, {'_id': False}))
+            return jsonable_encoder(resp)
+        
+        else:
+            resp['error_message'] = "Invalid admin_id or auth"
+            print("Invalid admin_id or auth")
+            raise HTTPException(status_code=400, detail="Invalid admin_id or auth. Authorization Failed.")
+    else:
+        resp['error_message'] = "Invalid admin_id or auth"
+        print("Invalid admin_id or auth")
+        raise HTTPException(status_code=400, detail="Invalid admin_id or auth. Authorization Failed.")
+
 
 @app.get('/api/alldevlist')
 async def on_alldevlist(request: Request):

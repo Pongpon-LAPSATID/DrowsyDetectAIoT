@@ -18,7 +18,7 @@ tz = timezone(os.getenv('TZ', None))
 if tz is None:
     logging.error('TZ undefined.')
     sys.exit(1)
-timestamp = datetime.now(tz=tz)
+
 
 # logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -55,8 +55,10 @@ async def on_carownerregister(request: Request):
 async def on_cardriverreg(request: Request):
     resp = {'status':'OK'}
     # call the car_driver_db
+    timestamp = datetime.now(tz=tz)
     car_db = mongo_client.car_db
     car_driver_db = car_db.car_driver
+    car_owner_db = car_db.car_owner
     #extract data from JSON
     data = await request.json()
     # check for abnormal case 1: duplicated user_id with the existing one in db
@@ -74,14 +76,42 @@ async def on_cardriverreg(request: Request):
             raise HTTPException(status_code=400, detail=f'missing required info; {data[key]} is required')
             #return jsonable_encoder(resp)
 
-    data['driver_registered_at'] = timestamp
-    car_driver_db.insert_one(data)
-    return jsonable_encoder(resp)
+    # check for abnormal case 3: invalid admin_id, auth
+    admins = list(car_owner_db.find({}, {'admin_id': True}))
+    admin_id_list = [admin['admin_id'] for admin in admins]
+
+    # invalid admin_id, auth inputted are not allowed
+    if data['admin_id'] in admin_id_list:
+        auth = data['auth']
+        valid_auth = car_owner_db.find_one({'admin_id': data['admin_id']}, {'_id': 0, 'auth': 1})['auth']
+        
+        if auth == str(valid_auth):
+            print(f'admin: {data["admin_id"]} authorized new device register.')
+            data['driver_registered_at'] = timestamp
+            # store only dev_reg data
+            keys = ['car_driver_id', 'driver_name', 'driver_address', 'driver_contact', 'driver_registered_at', 'car_model', 'car_created_at']
+            new_cdreg = {k: v for k, v in data.items() if k in keys}
+            # register new car driver to car_driver database
+            cd_objid = car_driver_db.insert_one(new_cdreg).inserted_id
+            resp['dev_id'] = str(cd_objid)
+
+            return jsonable_encoder(resp)
+        
+        else:
+            resp['error_message'] = "Invalid admin_id or auth"
+            print("Invalid admin_id or auth")
+            raise HTTPException(status_code=400, detail="Invalid admin_id or auth. Authorization Failed.")
+    else:
+        resp['error_message'] = "Invalid admin_id or auth"
+        print("Invalid admin_id or auth")
+        raise HTTPException(status_code=400, detail="Invalid admin_id or auth. Authorization Failed.")
+
 
 @app.post('/api/carownerreg')
 async def on_carownerreg(request: Request):
     resp = {'status':'OK'}
     # call the car_owner_db
+    timestamp = datetime.now(tz=tz)
     car_db = mongo_client.car_db
     car_owner_db = car_db.car_owner
     # receive data from body as json
@@ -114,8 +144,10 @@ async def on_cardriverregedit(request: Request):
 async def on_cardriverregedit(request: Request):
     resp = {'status':'OK'}
     # call the car_driver_db
+    timestamp = datetime.now(tz=tz)
     car_db = mongo_client.car_db
     car_driver_db = car_db.car_driver
+    car_owner_db = car_db.car_owner
     #extract data from JSON
     data = await request.json()
     # check for abnormal case 1: duplicated user_id with the existing one in db
@@ -132,15 +164,39 @@ async def on_cardriverregedit(request: Request):
             resp['error_message'] = f'400: missing required info; {data[key]} is required'
             raise HTTPException(status_code=400, detail=f'missing required info; {data[key]} is required')
             #return jsonable_encoder(resp)
-    car_driver_db.update_one({'car_driver_id': data['car_driver_id']}, {'$set':{'driver_name':data['driver_name']}})
-    car_driver_db.update_one({'car_driver_id': data['car_driver_id']}, {'$set':{'driver_address':data['driver_address']}})
-    car_driver_db.update_one({'car_driver_id': data['car_driver_id']}, {'$set':{'driver_contact':data['driver_contact']}})
-    car_driver_db.update_one({'car_driver_id': data['car_driver_id']}, {'$set':{'driver_registered_at':timestamp}})
-    car_driver_db.update_one({'car_driver_id': data['car_driver_id']}, {'$set':{'car_model':data['car_model']}})
-    car_driver_db.update_one({'car_driver_id': data['car_driver_id']}, {'$set':{'car_created_at':data['car_created_at']}})
 
-    resp['edited_driver'] = str(car_driver_db.find_one({'car_driver_id':data['car_driver_id']}, {'_id':False}))
-    return jsonable_encoder(resp)
+    # check for abnormal case 3: invalid admin_id, auth
+    admins = list(car_owner_db.find({}, {'admin_id': True}))
+    admin_id_list = [admin['admin_id'] for admin in admins]
+
+    # invalid admin_id, auth inputted are not allowed
+    if data['admin_id'] in admin_id_list:
+        auth = data['auth']
+        valid_auth = car_owner_db.find_one({'admin_id': data['admin_id']}, {'_id': 0, 'auth': 1})['auth']
+        
+        if auth == str(valid_auth):
+            print(f'admin: {data["admin_id"]} authorized new device register.')
+            data['registered_at'] = timestamp
+            # update data
+            car_driver_db.update_one({'car_driver_id': data['car_driver_id']}, {'$set':{'driver_name':data['driver_name']}})
+            car_driver_db.update_one({'car_driver_id': data['car_driver_id']}, {'$set':{'driver_address':data['driver_address']}})
+            car_driver_db.update_one({'car_driver_id': data['car_driver_id']}, {'$set':{'driver_contact':data['driver_contact']}})
+            car_driver_db.update_one({'car_driver_id': data['car_driver_id']}, {'$set':{'driver_registered_at':timestamp}})
+            car_driver_db.update_one({'car_driver_id': data['car_driver_id']}, {'$set':{'car_model':data['car_model']}})
+            car_driver_db.update_one({'car_driver_id': data['car_driver_id']}, {'$set':{'car_created_at':data['car_created_at']}})
+
+            resp['edited_driver'] = str(car_driver_db.find_one({'car_driver_id':data['car_driver_id']}, {'_id':False}))
+            return jsonable_encoder(resp)
+        
+        else:
+            resp['error_message'] = "Invalid admin_id or auth"
+            print("Invalid admin_id or auth")
+            raise HTTPException(status_code=400, detail="Invalid admin_id or auth. Authorization Failed.")
+    else:
+        resp['error_message'] = "Invalid admin_id or auth"
+        print("Invalid admin_id or auth")
+        raise HTTPException(status_code=400, detail="Invalid admin_id or auth. Authorization Failed.")
+
 
 @app.get('/carownerregedit')
 async def on_carownerregedit(request: Request):
@@ -152,6 +208,7 @@ async def on_carownerregedit(request: Request):
 async def on_carownerregedit(request: Request):
     resp = {'status':'OK'}
     # call the car_driver_db
+    timestamp = datetime.now(tz=tz)
     car_db = mongo_client.car_db
     car_owner_db = car_db.car_owner
     #extract data from JSON

@@ -7,15 +7,22 @@
     </head>
     <body>
         <h1>Device Registration</h1>
+        <h2>Input New Device's Information</h2>
         <input type="text" id="dev_id" placeholder="Enter dev_id"><br><br>
         <input type="text" id="car_driver_id" placeholder="Enter car_driver_id"><br><br>
         <input type="text" id="created_at" placeholder="Enter created_at"><br><br>
+        <br><br>
+        <h2>Admin Authorization</h2>
+        <input type="text" id="admin_id" placeholder="Enter a valid admin_id"><br><br>
+        <input type="text" id="auth" placeholder="Enter auth of the admin_id"><br><br>
         <input type="submit" id="submit" value="Submit">
         <script>
             document.getElementById('submit').addEventListener('click', function() {
                 var dev_id = document.getElementById('dev_id').value;
                 var car_driver_id = document.getElementById('car_driver_id').value;
                 var created_at = document.getElementById('created_at').value;
+                var admin_id = document.getElementById('admin_id').value;
+                var auth = document.getElementById('auth').value;
                 fetch('/api/devregister', {
                     method: 'POST',
                     headers: {
@@ -24,7 +31,9 @@
                     body: JSON.stringify({
                         dev_id: dev_id,
                         car_driver_id: car_driver_id,
-                        created_at: created_at
+                        created_at: created_at,
+                        admin_id: admin_id,
+                        auth: auth
                     })
                 }).then(function(response) {
                     if(response.status==200){
@@ -32,7 +41,7 @@
                         console.log("HTML Frontend OK");
                         return response.json();
                     } else{
-                        alert(response.status + ": " + 'Registration Failed.\nPossible Causes:\n1. This admin_id is already used.\n2. All inputs are required');
+                        alert(response.status + ": " + 'Registration Failed.\nPossible Causes:\n1. This dev_id is already used.\n2. All inputs are required.\n3. Invalid admin_id, auth');
                     }
                 }).then(function(data) {
                     console.log(data);
