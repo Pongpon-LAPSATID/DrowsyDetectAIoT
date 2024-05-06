@@ -64,12 +64,17 @@ def hb_check_cmd_send():
         latest_hb = dev_log.find_one({'dev_id': devid}, {'_id': False})['latest_hb']
         current_ms = time.time()
         print(f'current_ms: {current_ms}')
-        if ((current_ms - latest_hb) >= 5):
+        if ((current_ms - latest_hb) >= 15):
             dev_log.update_one({'dev_id': devid}, {'$set':{'status':'offline'}})
             print(f'dev_id: {devid} || status: "offline" || latest_hb = {latest_hb}')
         else:
-            dev_log.update_one({'dev_id': devid}, {'$set':{'status':'online'}})
-            print(f'dev_id: {devid} || status: "online" || latest_hb = {latest_hb}')
+            status = dev_log.find_one({'dev_id': devid}, {'_id': 0, 'status': 1})['status']
+            if status == 'offline':
+                dev_log.update_one({'dev_id': devid}, {'$set':{'status':'online'}})
+                print(f'dev_id: {devid} || status: "online" || latest_hb = {latest_hb}')
+            else:
+                # no change (status: 'activated', 'alarm')
+                print(f'dev_id: {devid} || status: {status} || latest_hb = {latest_hb}')
 
         # publish the current cmd (activation command) for each dev_id from the database
         cmd = dev_log.find_one({'dev_id': devid}, {'_id': 0, 'CMD': 1})['CMD']
@@ -79,7 +84,7 @@ def hb_check_cmd_send():
         print(f"{devid} || CMD: {cmd} published")
 
 
-schedule.every(5).seconds.do(hb_check_cmd_send)
+schedule.every(15).seconds.do(hb_check_cmd_send)
 
 while True:
     schedule.run_pending()

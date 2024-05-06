@@ -1,16 +1,12 @@
 services:
   dev_api:
     build: ./dev_api
-    ports:
-      - ${DEV_API_PORT}:${DEV_API_PORT}
     env_file:
       - .env
     depends_on:
       - mongo
   user_api:
     build: ./user_api
-    ports:
-      - ${USER_API_PORT}:${USER_API_PORT}
     env_file:
       - .env
     depends_on:
@@ -20,7 +16,35 @@ services:
     env_file:
       - .env
     depends_on:
-      - dev_api  
+      - dev_api
+  hw_mock:
+    build: ./hw_mock
+    env_file:
+      - .env
+    depends_on:
+      - mongo
+  line_bot:
+    build: ./line_bot
+    ports:
+      - ${LINE_WEBHOOK_PORT}:${LINE_WEBHOOK_PORT}
+    env_file:
+      - .env
+    depends_on:
+      - user_api
+  userid_find:
+    build: ./userid_find
+    env_file:
+      - .env
+    depends_on:
+      - user_api
+  heartbeat_cmd_scheduler:
+    build: ./heartbeat_cmd_scheduler
+    env_file:
+      - .env
+    depends_on:
+      - mongo
+      - dev_api
+      - mqtt_con
   mongo:
     image: mongo
     restart: always

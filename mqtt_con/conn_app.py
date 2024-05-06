@@ -68,6 +68,10 @@ MQTT_CMD_TOPIC = os.getenv('MQTT_CMD_TOPIC', None)
 if MQTT_CMD_TOPIC is None:
     logging.error('MQTT_CMD_TOPIC undefined.')
     sys.exit(1)
+MQTT_STATUS_TOPIC = os.getenv('MQTT_STATUS_TOPIC', None)
+if MQTT_STATUS_TOPIC is None:
+    logging.error('MQTT_STATUS_TOPIC undefined.')
+    sys.exit(1)
 
 # LINE Bot Config
 channel_access_token = os.getenv('LINE_ACCESS_TOKEN', None)
@@ -93,28 +97,9 @@ def on_connect(client, userdata, flags, reason_code, properties):
     client.subscribe(MQTT_HB_TOPIC + '#')
     client.subscribe(MQTT_CARID_LOG_TOPIC + '#')
     client.subscribe(MQTT_CARID_ALARM_TOPIC + '#')
+    client.subscribe(MQTT_STATUS_TOPIC + '#')
+    client.subscribe(MQTT_CMD_TOPIC + '#')
     
-    # Plan B: Publish {'CMD':'ON'}
-    #cmd_on_json = json.dumps({'CMD':'ON'}).encode('utf-8')
-    #client.publish(MQTT_CMD_TOPIC, cmd_on_json)
-
-    '''
-    # Plan A: Let Admin tick the checkbox on web ui to activate each dev_id {'CMD':'ON'}
-    # Plan B: if server (this PC) can connect to mqtt, activate all dev_ids automatically.
-    # publish mqtt cmd topic; send {'CMD': ON} to ESP32 board
-    ## send cmd topic to hardware to activate the drowsy_detect system
-    cmd_dict = {'CMD': 'ON'} # {'CMD': 'ON'}
-    if mqtt_client.connected():
-        try:
-            cmd_json = json.dumps(cmd_dict)
-            mqtt_client.publish(MQTT_CMD_TOPIC, cmd_json)
-        except Exception as e:
-            print(f'Error; Exception: {e}')
-            cmd_dict['CMD'] = 'OFF'
-            print(f'CMD = OFF')
-    else:
-        pass
-    '''
 
 def on_message(client, userdata, msg):
     logging.info('Received message: %s from %s', msg.payload, msg.topic)
