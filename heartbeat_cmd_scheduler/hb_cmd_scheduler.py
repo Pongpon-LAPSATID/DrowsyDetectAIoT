@@ -64,7 +64,7 @@ def hb_check_cmd_send():
         latest_hb = dev_log.find_one({'dev_id': devid}, {'_id': False})['latest_hb']
         current_ms = time.time()
         print(f'current_ms: {current_ms}')
-        if ((current_ms - latest_hb) >= 15):
+        if ((current_ms - latest_hb) >= 5):
             dev_log.update_one({'dev_id': devid}, {'$set':{'status':'offline'}})
             print(f'dev_id: {devid} || status: "offline" || latest_hb = {latest_hb}')
         else:
@@ -84,7 +84,7 @@ def hb_check_cmd_send():
         print(f"{devid} || CMD: {cmd} published")
 
 
-schedule.every(15).seconds.do(hb_check_cmd_send)
+schedule.every(5).seconds.do(hb_check_cmd_send)
 
 while True:
     schedule.run_pending()
