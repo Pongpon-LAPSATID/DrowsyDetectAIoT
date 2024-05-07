@@ -34,6 +34,9 @@
 ![Screenshot (976)](https://github.com/pitijit/Ict720_software_2024/assets/85090124/60441815-2cdd-4015-a048-2e55fc5b7f1c)
 ## Data Modeling<br>
 ![ICT720  Group 1_class diagram](https://github.com/pitijit/Ict720_software_2024/assets/104715281/2d63141f-a11c-432d-845f-35574a492a72)
+## LINE Bot Alert<br>
+<img width="279" alt="image" src="https://github.com/pitijit/Ict720_software_2024/assets/92443678/e0bc8d0c-38d1-4feb-9df0-1aa69777afcd">
+
 
 
 
